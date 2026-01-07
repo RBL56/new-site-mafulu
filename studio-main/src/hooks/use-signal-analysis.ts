@@ -1,0 +1,220 @@
+
+'use client';
+
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useDerivApi } from '@/context/deriv-api-context';
+
+export const SYMBOL_CONFIG: { [key: string]: { name: string, type: string } } = {
+    'R_10': { name: 'Volatility 10', type: 'volatility' },
+    'R_25': { name: 'Volatility 25', type: 'volatility' },
+    'R_50': { name: 'Volatility 50', type: 'volatility' },
+    'R_75': { name: 'Volatility 75', type: 'volatility' },
+    'R_100': { name: 'Volatility 100', type: 'volatility' },
+    '1HZ10V': { name: 'Volatility 10 (1s)', type: 'volatility' },
+    '1HZ25V': { name: 'Volatility 25 (1s)', type: 'volatility' },
+    '1HZ30V': { name: 'Volatility 30 (1s)', type: 'volatility' },
+    '1HZ50V': { name: 'Volatility 50 (1s)', type: 'volatility' },
+    '1HZ75V': { name: 'Volatility 75 (1s)', type: 'volatility' },
+    '1HZ90V': { name: 'Volatility 90 (1s)', type: 'volatility' },
+    '1HZ100V': { name: 'Volatility 100 (1s)', type: 'volatility' },
+    'JD10': { name: 'Jump 10', type: 'jump' },
+    'JD25': { name: 'Jump 25', type: 'jump' },
+    'JD50': { name: 'Jump 50', type: 'jump' },
+    'JD75': { name: 'Jump 75', type: 'jump' },
+    'JD100': { name: 'Jump 100', type: 'jump' },
+};
+
+const playSound = (text: string) => {
+    try {
+        if ('speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            utterance.rate = 1.2;
+            window.speechSynthesis.speak(utterance);
+        }
+    } catch (e) {
+        console.error("Could not play sound", e);
+    }
+};
+
+const chiSquareTest = (observed: number[]) => {
+    const total = observed.reduce((a, b) => a + b, 0);
+    if (total === 0) return { chi2: 0, pValue: 1, interpretation: 'No Data' };
+
+    const expected = total / 10;
+    if (expected === 0) return { chi2: 0, pValue: 1, interpretation: 'No Data' };
+
+    const chi2 = observed.reduce((acc, obs) => acc + Math.pow(obs - expected, 2) / expected, 0);
+    const p_value_table: { [key: number]: number } = {
+        21.67: 0.01, 19.02: 0.025, 16.92: 0.05, 14.68: 0.1, 12.24: 0.2, 4.17: 0.9, 2.7: 0.98
+    };
+
+    let pValue = 1.0;
+    for (const threshold in p_value_table) {
+        if (chi2 >= parseFloat(threshold)) {
+            pValue = p_value_table[threshold as any];
+            break;
+        }
+    }
+
+    let interpretation = "Uniform (fair)";
+    if (pValue < 0.01) interpretation = "STRONG BIAS DETECTED";
+    else if (pValue < 0.05) interpretation = "Bias detected";
+
+    return { chi2, pValue, interpretation };
+};
+
+const analyzeDigits = (digits: number[], symbol: string, name: string) => {
+    const total = digits.length;
+    if (total < 100) return null;
+
+    const counts = Array(10).fill(0);
+    digits.forEach(digit => {
+        if (digit >= 0 && digit <= 9) counts[digit]++;
+    });
+
+    const percentages: { [key: string]: number } = {};
+    for (let i = 0; i < 10; i++) {
+        percentages[`digit_${i}`] = (counts[i] / total) * 100;
+    }
+    percentages.over_3 = (counts.slice(4).reduce((a, b) => a + b, 0) / total) * 100;
+    percentages.under_6 = (counts.slice(0, 6).reduce((a, b) => a + b, 0) / total) * 100;
+    const evenCount = counts.reduce((acc, count, i) => i % 2 === 0 ? acc + count : acc, 0);
+    percentages.even = (evenCount / total) * 100;
+    percentages.odd = 100 - percentages.even;
+
+    const chiSquare = chiSquareTest(counts);
+    let confidence = 0;
+    const reasons: string[] = [];
+    let strongSignalType = '';
+
+    if (percentages.over_3 >= 66) { confidence += 35; reasons.push("Strong Over 3"); strongSignalType = 'Strong Over 3'; }
+    else if (percentages.over_3 >= 61) { confidence += 15; reasons.push("Moderate Over 3"); }
+    if (percentages.under_6 >= 66) { confidence += 35; reasons.push("Strong Under 6"); strongSignalType = 'Strong Under 6'; }
+    else if (percentages.under_6 >= 61) { confidence += 15; reasons.push("Moderate Under 6"); }
+    if (percentages.even >= 56 || percentages.even <= 44) { confidence += 15; reasons.push("Strong Even/Odd Bias"); }
+    if (chiSquare.pValue < 0.01) { confidence += 20; reasons.push("Strong Statistical Bias"); }
+    else if (chiSquare.pValue < 0.05) { confidence += 10; reasons.push("Statistical Bias"); }
+    const hotDigits = counts.map((c, i) => ({ c, i })).filter(d => (d.c / total) * 100 >= 14).map(d => d.i);
+    if (hotDigits.length > 0) { confidence += 15; reasons.push("Hot Digit(s)"); }
+
+    return {
+        symbol,
+        name,
+        percentages,
+        chi_square: chiSquare,
+        confidence: Math.min(100, confidence),
+        hot_digits: hotDigits,
+        ticks_analyzed: total,
+        update_time: new Date().toISOString(),
+        strong_signal: strongSignalType !== '',
+        strong_signal_type: strongSignalType,
+        reasons,
+    };
+};
+
+export const useSignalAnalysis = () => {
+    const { api, isConnected, subscribeToMessages, marketConfig } = useDerivApi();
+    const [analysisData, setAnalysisData] = useState<{ [key: string]: any }>({});
+    const [signalAlert, setSignalAlert] = useState<any | null>(null);
+    const [lastUpdateTime, setLastUpdateTime] = useState<string>('');
+
+    const tickDataRef = useRef<{ [key: string]: number[] }>({});
+    const analysisDataRef = useRef<{ [key: string]: any }>({});
+    const subscribedSymbols = useRef(new Set<string>());
+    const historyFetchedSymbols = useRef(new Set<string>());
+    const strongSignalNotified = useRef(new Set<string>());
+
+    const extractLastDigit = useCallback((price: number, marketSymbol: string) => {
+        const config = marketConfig[marketSymbol];
+        const decimals = config?.decimals || 2;
+        const priceStr = price.toFixed(decimals);
+        return parseInt(priceStr[priceStr.length - 1]);
+    }, [marketConfig]);
+
+    const runAnalysis = useCallback(() => {
+        let hasNewStrongSignal = false;
+        Object.keys(tickDataRef.current).forEach(symbol => {
+            const digits = tickDataRef.current[symbol];
+            if (digits && digits.length >= 100) {
+                const result = analyzeDigits(digits, symbol, SYMBOL_CONFIG[symbol]?.name || symbol);
+                if (result) {
+                    const previousResult = analysisDataRef.current[symbol];
+                    if (result.strong_signal && (!previousResult || !previousResult.strong_signal)) {
+                        if (!strongSignalNotified.current.has(symbol)) {
+                            playSound(`${result.name}, ${result.strong_signal_type}`);
+                            strongSignalNotified.current.add(symbol);
+                            setSignalAlert(result);
+                            hasNewStrongSignal = true;
+                        }
+                    } else if (!result.strong_signal && previousResult && previousResult.strong_signal) {
+                        strongSignalNotified.current.delete(symbol);
+                    }
+                    analysisDataRef.current[symbol] = result;
+                }
+            }
+        });
+
+        setAnalysisData({ ...analysisDataRef.current });
+        setLastUpdateTime(new Date().toLocaleTimeString());
+    }, []);
+
+    const handleMessage = useCallback((data: any) => {
+        if (data.error) return;
+
+        if (data.msg_type === 'history') {
+            const symbol = data.echo_req.ticks_history;
+            if (!subscribedSymbols.current.has(symbol)) {
+                const newDigits = data.history.prices.map((p: string) => extractLastDigit(parseFloat(p), symbol));
+                tickDataRef.current[symbol] = (tickDataRef.current[symbol] || []).concat(newDigits);
+
+                if (api && api.readyState === WebSocket.OPEN) {
+                    api.send(JSON.stringify({ ticks: symbol, subscribe: 1 }));
+                    subscribedSymbols.current.add(symbol);
+                }
+            }
+        }
+
+        if (data.msg_type === 'tick') {
+            const tick = data.tick;
+            const symbol = tick.symbol;
+            const newDigit = extractLastDigit(parseFloat(tick.quote), symbol);
+            const existingTicks = tickDataRef.current[symbol] || [];
+            const updatedTicks = [...existingTicks, newDigit];
+            if (updatedTicks.length > 500) updatedTicks.shift();
+            tickDataRef.current[symbol] = updatedTicks;
+            runAnalysis();
+        }
+    }, [api, extractLastDigit, runAnalysis]);
+
+    const manageSubscriptions = useCallback(() => {
+        if (!api || !isConnected || api.readyState !== WebSocket.OPEN) return;
+
+        const symbols = Object.keys(SYMBOL_CONFIG);
+        const subscribeWithDelay = (index: number) => {
+            if (index >= symbols.length) return;
+            const symbol = symbols[index];
+            if (!historyFetchedSymbols.current.has(symbol) && api.readyState === WebSocket.OPEN) {
+                api.send(JSON.stringify({ ticks_history: symbol, end: 'latest', count: 500, style: 'ticks' }));
+                historyFetchedSymbols.current.add(symbol);
+            }
+            setTimeout(() => subscribeWithDelay(index + 1), 200);
+        };
+        subscribeWithDelay(0);
+    }, [api, isConnected]);
+
+    useEffect(() => {
+        if (isConnected) {
+            manageSubscriptions();
+            const unsubscribe = subscribeToMessages(handleMessage);
+            return () => unsubscribe();
+        }
+    }, [isConnected, manageSubscriptions, handleMessage, subscribeToMessages]);
+
+    return {
+        analysisData,
+        signalAlert,
+        setSignalAlert,
+        lastUpdateTime
+    };
+};
