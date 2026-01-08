@@ -49,15 +49,23 @@ const SignalBotConfigPanel = () => {
                             className="bg-background"
                         />
                     </div>
-                     <div className="space-y-2">
+                    <div className="space-y-2">
                         <Label htmlFor="signal-sl">Stop Loss (losses)</Label>
                         <Input
                             id="signal-sl"
                             type="number"
                             value={signalBotConfig.stopLossConsecutive}
                             onChange={(e) => handleInputChange('stopLossConsecutive', e.target.value)}
-                             className="bg-background"
+                            className="bg-background"
                         />
+                    </div>
+                    <div className="flex items-center space-x-2 pt-6">
+                        <Switch
+                            id="signal-autotrade"
+                            checked={signalBotConfig.autoTrade}
+                            onCheckedChange={(checked) => handleSwitchChange('autoTrade', checked)}
+                        />
+                        <Label htmlFor="signal-autotrade" className="text-yellow-500 font-bold">Auto Trade Arena</Label>
                     </div>
                     <div className="flex items-center space-x-2 pt-6">
                         <Switch

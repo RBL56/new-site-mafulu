@@ -105,6 +105,7 @@ const analyzeDigits = (digits: number[], symbol: string, name: string) => {
         chi_square: chiSquare,
         confidence: Math.min(100, confidence),
         hot_digits: hotDigits,
+        counts, // Pass raw counts for further analysis
         ticks_analyzed: total,
         update_time: new Date().toISOString(),
         strong_signal: strongSignalType !== '',
@@ -113,9 +114,84 @@ const analyzeDigits = (digits: number[], symbol: string, name: string) => {
     };
 };
 
+const analyzeAutoBotStrategy = (digits: number[], symbol: string, name: string) => {
+    const total = digits.length;
+    if (total < 1000) return null;
+
+    const counts = Array(10).fill(0);
+    digits.forEach(digit => {
+        if (digit >= 0 && digit <= 9) counts[digit]++;
+    });
+
+    const percentages: { [key: number]: number } = {};
+    for (let i = 0; i < 10; i++) {
+        percentages[i] = (counts[i] / total) * 100;
+    }
+
+    // Over 1 (Digit 0-2 frequency <= 10.5%)
+    const over1Ready = (percentages[0] + percentages[1] + percentages[2]) / 3 <= 10.5;
+
+    // Under 8 (Digit 7-9 frequency <= 10.5%)
+    const under8Ready = (percentages[7] + percentages[8] + percentages[9]) / 3 <= 10.5;
+
+    // Entry Point Logic
+    // Touching digits in last N ticks
+    const last10 = digits.slice(-10);
+    const last5 = digits.slice(-5);
+
+    // Most/Least appearing for Entry exclusion
+    const sortedIndices = [...Array(10).keys()].sort((a, b) => counts[b] - counts[a]);
+    const mostAppearing = sortedIndices[0];
+    const leastAppearing = sortedIndices[9];
+
+    let over1Entry = false;
+    if (over1Ready) {
+        const count03 = last10.filter(d => d >= 0 && d <= 3).length;
+        const currentDigit = last10[last10.length - 1];
+        if (count03 > 2 && (currentDigit === 5 || currentDigit === 6)) {
+            if (currentDigit !== mostAppearing && currentDigit !== leastAppearing) {
+                over1Entry = true;
+            }
+        }
+    }
+
+    let under8Entry = false;
+    if (under8Ready) {
+        const count79 = last10.filter(d => d >= 7 && d <= 9).length;
+        const currentDigit = last10[last10.length - 1];
+        if (count79 > 2 && (currentDigit === 7 || currentDigit === 4)) { // Strategy says 7 or 4
+            if (currentDigit !== mostAppearing && currentDigit !== leastAppearing) {
+                under8Entry = true;
+            }
+        }
+    }
+
+    // Recovery Logic
+    // Recovery on under 8 -> trade over 4 when last 5 <= 4
+    const recoveryUnder8 = last5.every(d => d <= 4);
+
+    // Recovery on over 1 -> trade under 6 when last 5 >= 6
+    const recoveryOver1 = last5.every(d => d >= 6);
+
+    return {
+        symbol,
+        name,
+        over1Ready,
+        under8Ready,
+        over1Entry,
+        under8Entry,
+        recoveryUnder8,
+        recoveryOver1,
+        lastDigit: last10[last10.length - 1],
+        percentages,
+        ticks_analyzed: total
+    };
+};
+
 export const useSignalAnalysis = () => {
     const { api, isConnected, subscribeToMessages, marketConfig } = useDerivApi();
     const [analysisData, setAnalysisData] = useState<{ [key: string]: any }>({});
+    const [autoBotData, setAutoBotData] = useState<{ [key: string]: any }>({});
     const [signalAlert, setSignalAlert] = useState<any | null>(null);
     const [lastUpdateTime, setLastUpdateTime] = useState<string>('');
 
@@ -134,8 +210,12 @@ export const useSignalAnalysis = () => {
 
     const runAnalysis = useCallback(() => {
         let hasNewStrongSignal = false;
+        const newAutoBotData: { [key: string]: any } = {};
+
         Object.keys(tickDataRef.current).forEach(symbol => {
             const digits = tickDataRef.current[symbol];
+
+            // Standard Signal Analysis
             if (digits && digits.length >= 100) {
                 const result = analyzeDigits(digits, symbol, SYMBOL_CONFIG[symbol]?.name || symbol);
                 if (result) {
@@ -153,9 +233,18 @@ export const useSignalAnalysis = () => {
                     analysisDataRef.current[symbol] = result;
                 }
             }
+
+            // Auto Bot Strategy Analysis (1000 ticks)
+            if (digits && digits.length >= 1000) {
+                const autoResult = analyzeAutoBotStrategy(digits, symbol, SYMBOL_CONFIG[symbol]?.name || symbol);
+                if (autoResult) {
+                    newAutoBotData[symbol] = autoResult;
+                }
+            }
         });
 
         setAnalysisData({ ...analysisDataRef.current });
+        setAutoBotData(newAutoBotData);
         setLastUpdateTime(new Date().toLocaleTimeString());
     }, []);
 
@@ -181,11 +270,11 @@ export const useSignalAnalysis = () => {
             const newDigit = extractLastDigit(parseFloat(tick.quote), symbol);
             const existingTicks = tickDataRef.current[symbol] || [];
             const updatedTicks = [...existingTicks, newDigit];
-            if (updatedTicks.length > 500) updatedTicks.shift();
+            if (updatedTicks.length > 1000) updatedTicks.shift();
             tickDataRef.current[symbol] = updatedTicks;
             runAnalysis();
         }
-    }, [api, extractLastDigit, runAnalysis]);
+    }, [extractLastDigit, runAnalysis]);
 
     const manageSubscriptions = useCallback(() => {
         if (!api || !isConnected || api.readyState !== WebSocket.OPEN) return;
@@ -195,7 +284,7 @@ export const useSignalAnalysis = () => {
             if (index >= symbols.length) return;
             const symbol = symbols[index];
             if (!historyFetchedSymbols.current.has(symbol) && api.readyState === WebSocket.OPEN) {
-                api.send(JSON.stringify({ ticks_history: symbol, end: 'latest', count: 500, style: 'ticks' }));
+                api.send(JSON.stringify({ ticks_history: symbol, end: 'latest', count: 1000, style: 'ticks' }));
                 historyFetchedSymbols.current.add(symbol);
             }
             setTimeout(() => subscribeWithDelay(index + 1), 200);
@@ -213,6 +302,7 @@ export const useSignalAnalysis = () => {
 
     return {
         analysisData,
+        autoBotData,
         signalAlert,
         setSignalAlert,
         lastUpdateTime

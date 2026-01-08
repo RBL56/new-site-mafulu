@@ -28,6 +28,7 @@ import { cn } from '@/lib/utils';
 import { useRef } from 'react';
 import SignalArena from '@/components/bot-builder/signal-arena';
 import SignalBotDashboard from '@/components/bot-builder/signal-bot-dashboard';
+import AutoBotCenter from '@/components/bot-builder/auto-bot-center';
 
 function BotBuilderContent() {
   const { isConnected } = useDerivApi();
@@ -55,6 +56,7 @@ function BotBuilderContent() {
         signalType: signalAlert.strong_signal_type,
         status: 'running',
         profit: 0,
+        trades: [],
         config: {
           market: signalAlert.symbol,
           tradeType: 'over_under',
@@ -68,6 +70,11 @@ function BotBuilderContent() {
           useMartingale: true,
           martingaleFactor: 2.1,
           useBulkTrading: false,
+          bulkTradeCount: 1,
+          useEntryPoint: false,
+          entryPointType: 'single',
+          entryRangeStart: 0,
+          entryRangeEnd: 9,
         }
       });
       setActiveTab('bot-builder');
@@ -104,6 +111,7 @@ function BotBuilderContent() {
                 <TabsTrigger value="bot-builder" className="py-3 text-base w-full justify-start" onClick={() => handleTabChange('bot-builder')}><Waypoints className="mr-2 h-5 w-5" />Bot Builder</TabsTrigger>
                 <TabsTrigger value="dcircle" className="py-3 text-base w-full justify-start" onClick={() => handleTabChange('dcircle')}><Circle className="mr-2 h-5 w-5" />DCircle</TabsTrigger>
                 <TabsTrigger value="signal-arena" className="py-3 text-base w-full justify-start" onClick={() => handleTabChange('signal-arena')}><Target className="mr-2 h-5 w-5" />Signal Arena</TabsTrigger>
+                <TabsTrigger value="auto-bot" className="py-3 text-base w-full justify-start" onClick={() => handleTabChange('auto-bot')}><Zap className="mr-2 h-5 w-5 text-yellow-500" />Auto Bot</TabsTrigger>
                 <TabsTrigger value="trading-view" className="py-3 text-base w-full justify-start" onClick={() => handleTabChange('trading-view')}><CandlestickChart className="mr-2 h-5 w-5" />TradingView</TabsTrigger>
               </TabsList>
             </ScrollArea>
@@ -115,8 +123,8 @@ function BotBuilderContent() {
                 <TabsTrigger value="bot-builder" className="py-3 text-base w-full justify-start"><Waypoints className="mr-2 h-5 w-5" />Bot Builder</TabsTrigger>
                 <TabsTrigger value="dcircle" className="py-3 text-base w-full justify-start"><Circle className="mr-2 h-5 w-5" />DCircle</TabsTrigger>
                 <TabsTrigger value="signal-arena" className="py-3 text-base w-full justify-start"><Target className="mr-2 h-5 w-5" />Signal Arena</TabsTrigger>
-                <TabsTrigger value="trading-view" className="py-3 text-base w-full justify-start"><CandlestickChart className="mr-2 h-5 w-5" />TradingView</TabsTrigger>
-              </TabsList>
+                <TabsTrigger value="auto-bot" className="py-3 text-base w-full justify-start"><Zap className="mr-2 h-5 w-5 text-yellow-500" />Auto Bot</TabsTrigger>
+                <TabsTrigger value="trading-view" className="py-3 text-base w-full justify-start"><CandlestickChart className="mr-2 h-4 w-5" />TradingView</TabsTrigger>             </TabsList>
             </ScrollArea>
           </div>
 
@@ -157,6 +165,10 @@ function BotBuilderContent() {
 
             <TabsContent value="signal-arena">
               <SignalArena />
+            </TabsContent>
+
+            <TabsContent value="auto-bot">
+              <AutoBotCenter />
             </TabsContent>
 
             <TabsContent value="trading-view" className="mt-0 px-4 md:px-0">

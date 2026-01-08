@@ -37,7 +37,7 @@ const formSchema = z.object({
 });
 
 export type BotConfigurationValues = z.infer<typeof formSchema>;
-export type SignalBotConfigurationValues = Pick<BotConfigurationValues, 'initialStake' | 'takeProfit' | 'stopLossConsecutive' | 'useMartingale' | 'martingaleFactor'>;
+export type SignalBotConfigurationValues = Pick<BotConfigurationValues, 'initialStake' | 'takeProfit' | 'stopLossConsecutive' | 'useMartingale' | 'martingaleFactor'> & { autoTrade: boolean };
 
 
 export default function BotConfigurationForm() {
@@ -129,18 +129,18 @@ export default function BotConfigurationForm() {
                 <FormItem>
                   <FormLabel>Trade Type</FormLabel>
                   <Select onValueChange={(value) => {
-                      field.onChange(value);
-                      if (value === 'matches_differs') {
-                        currentForm.setValue('predictionType', 'differs');
-                        currentForm.setValue('lastDigitPrediction', 1);
-                      }
-                      if (value === 'even_odd') {
-                        currentForm.setValue('predictionType', 'odd');
-                      }
-                      if (value === 'over_under') {
-                        currentForm.setValue('predictionType', 'over');
-                        currentForm.setValue('lastDigitPrediction', 4);
-                      }
+                    field.onChange(value);
+                    if (value === 'matches_differs') {
+                      currentForm.setValue('predictionType', 'differs');
+                      currentForm.setValue('lastDigitPrediction', 1);
+                    }
+                    if (value === 'even_odd') {
+                      currentForm.setValue('predictionType', 'odd');
+                    }
+                    if (value === 'over_under') {
+                      currentForm.setValue('predictionType', 'over');
+                      currentForm.setValue('lastDigitPrediction', 4);
+                    }
                   }} defaultValue={field.value} disabled={isBotRunning}>
                     <FormControl>
                       <SelectTrigger>
@@ -197,21 +197,21 @@ export default function BotConfigurationForm() {
             />
 
             {tradeType !== 'even_odd' && (
-                <FormField
-                    control={currentForm.control}
-                    name="lastDigitPrediction"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Last Digit Prediction</FormLabel>
-                        <FormControl>
-                        <Input type="number" placeholder="e.g. 1" {...field} value={field.value ?? ''} disabled={isBotRunning} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
+              <FormField
+                control={currentForm.control}
+                name="lastDigitPrediction"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Last Digit Prediction</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="e.g. 1" {...field} value={field.value ?? ''} disabled={isBotRunning} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             )}
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={currentForm.control}
@@ -242,72 +242,72 @@ export default function BotConfigurationForm() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField
-                    control={currentForm.control}
-                    name="takeProfit"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Take Profit ($)</FormLabel>
-                        <FormControl>
-                        <Input type="number" placeholder="e.g. 10" {...field} value={field.value ?? ''} disabled={isBotRunning}/>
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                 <FormField
-                    control={currentForm.control}
-                    name="stopLossType"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Stop Loss Type</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isBotRunning}>
-                                <FormControl>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select stop loss type" />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    <SelectItem value="amount">Amount ($)</SelectItem>
-                                    <SelectItem value="consecutive_losses">Consecutive Losses</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
+              <FormField
+                control={currentForm.control}
+                name="takeProfit"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Take Profit ($)</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="e.g. 10" {...field} value={field.value ?? ''} disabled={isBotRunning} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={currentForm.control}
+                name="stopLossType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Stop Loss Type</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isBotRunning}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select stop loss type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="amount">Amount ($)</SelectItem>
+                        <SelectItem value="consecutive_losses">Consecutive Losses</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
             {stopLossType === 'amount' ? (
-                <FormField
-                    control={currentForm.control}
-                    name="stopLossAmount"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Stop Loss Amount ($)</FormLabel>
-                            <FormControl>
-                                <Input type="number" placeholder="e.g. 50" {...field} value={field.value ?? ''} disabled={isBotRunning} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
+              <FormField
+                control={currentForm.control}
+                name="stopLossAmount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Stop Loss Amount ($)</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="e.g. 50" {...field} value={field.value ?? ''} disabled={isBotRunning} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             ) : (
-                <FormField
-                    control={currentForm.control}
-                    name="stopLossConsecutive"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Consecutive Losses</FormLabel>
-                            <FormControl>
-                                <Input type="number" placeholder="1-10" {...field} value={field.value ?? ''} disabled={isBotRunning} />
-                            </FormControl>
-                             <FormMessage />
-                        </FormItem>
-                    )}
-                />
+              <FormField
+                control={currentForm.control}
+                name="stopLossConsecutive"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Consecutive Losses</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="1-10" {...field} value={field.value ?? ''} disabled={isBotRunning} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             )}
-            
+
             <FormField
               control={currentForm.control}
               name="useMartingale"
@@ -331,19 +331,19 @@ export default function BotConfigurationForm() {
             />
 
             {useMartingale && (
-                <FormField
-                    control={currentForm.control}
-                    name="martingaleFactor"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Martingale Factor</FormLabel>
-                        <FormControl>
-                        <Input type="number" placeholder="e.g. 2.1" {...field} value={field.value ?? ''} disabled={isBotRunning}/>
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
+              <FormField
+                control={currentForm.control}
+                name="martingaleFactor"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Martingale Factor</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="e.g. 2.1" {...field} value={field.value ?? ''} disabled={isBotRunning} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             )}
 
             <FormField
@@ -369,23 +369,23 @@ export default function BotConfigurationForm() {
             />
 
             {useBulkTrading && (
-                <FormField
-                    control={currentForm.control}
-                    name="bulkTradeCount"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Number of Trades</FormLabel>
-                        <FormControl>
-                        <Input type="number" placeholder="e.g. 10" {...field} value={field.value ?? ''} disabled={isBotRunning}/>
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
+              <FormField
+                control={currentForm.control}
+                name="bulkTradeCount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Number of Trades</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="e.g. 10" {...field} value={field.value ?? ''} disabled={isBotRunning} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             )}
 
             <Separator />
-            
+
             <FormField
               control={currentForm.control}
               name="useEntryPoint"
@@ -407,7 +407,7 @@ export default function BotConfigurationForm() {
                 </FormItem>
               )}
             />
-            
+
             {useEntryPoint && (
               <div className="space-y-4 rounded-lg border p-4">
                 <FormField
@@ -423,8 +423,8 @@ export default function BotConfigurationForm() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                            <SelectItem value="single">Single Digit</SelectItem>
-                            <SelectItem value="consecutive">Two Consecutive Digits</SelectItem>
+                          <SelectItem value="single">Single Digit</SelectItem>
+                          <SelectItem value="consecutive">Two Consecutive Digits</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -439,7 +439,7 @@ export default function BotConfigurationForm() {
                       <FormItem>
                         <FormLabel>Entry Digit</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="e.g., 5" {...field} value={field.value ?? ''} disabled={isBotRunning}/>
+                          <Input type="number" placeholder="e.g., 5" {...field} value={field.value ?? ''} disabled={isBotRunning} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -454,7 +454,7 @@ export default function BotConfigurationForm() {
                         <FormItem>
                           <FormLabel>From Range</FormLabel>
                           <FormControl>
-                            <Input type="number" placeholder="0" {...field} value={field.value ?? ''} disabled={isBotRunning}/>
+                            <Input type="number" placeholder="0" {...field} value={field.value ?? ''} disabled={isBotRunning} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -467,7 +467,7 @@ export default function BotConfigurationForm() {
                         <FormItem>
                           <FormLabel>To Range</FormLabel>
                           <FormControl>
-                            <Input type="number" placeholder="9" {...field} value={field.value ?? ''} disabled={isBotRunning}/>
+                            <Input type="number" placeholder="9" {...field} value={field.value ?? ''} disabled={isBotRunning} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

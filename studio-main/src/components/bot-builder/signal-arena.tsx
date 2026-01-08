@@ -194,8 +194,7 @@ const SignalArena = () => {
     }, [activeFilter, FILTERS, analysisData]);
 
     useEffect(() => {
-        const interval = setInterval(filterAndSortData, 1000);
-        return () => clearInterval(interval);
+        filterAndSortData();
     }, [filterAndSortData]);
 
     // --- Extension Check Logic (Same as before) ---
