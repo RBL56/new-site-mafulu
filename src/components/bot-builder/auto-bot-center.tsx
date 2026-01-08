@@ -9,12 +9,31 @@ import { Play, Pause, Zap, Shield, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
 import { useDerivApi } from '@/context/deriv-api-context';
+import AutoTradePanel from './auto-trade-panel';
 
 export default function AutoBotCenter() {
     const { autoBotData, startSignalBot, signalBots } = useBot();
     const { isConnected } = useDerivApi();
     const [isAutoBotEnabled, setIsAutoBotEnabled] = useState(false);
     const [lastTradeTime, setLastTradeTime] = useState<{ [key: string]: number }>({});
+    const [recoveryMode, setRecoveryMode] = useState<{ [key: string]: 'over1' | 'under8' | null }>({});
+
+    // Watch signal bots to detect losses and enter recovery mode
+    useEffect(() => {
+        signalBots.forEach(bot => {
+            if (bot.status === 'stopped' && bot.trades.length > 0) {
+                const lastTrade = bot.trades[0]; // Most recent trade is at index 0
+                if (!lastTrade.isWin) {
+                    const symbol = bot.market;
+                    if (bot.signalType === 'Over 1 Strategy') {
+                        setRecoveryMode(prev => ({ ...prev, [symbol]: 'over1' }));
+                    } else if (bot.signalType === 'Under 8 Strategy') {
+                        setRecoveryMode(prev => ({ ...prev, [symbol]: 'under8' }));
+                    }
+                }
+            }
+        });
+    }, [signalBots]);
 
     useEffect(() => {
         if (!isAutoBotEnabled || !autoBotData) return;
@@ -44,18 +63,20 @@ export default function AutoBotCenter() {
                 strategy = 'over_under';
                 prediction = 8;
                 direction = 'under';
-            } else if (data.recoveryUnder8) {
+            } else if (recoveryMode[symbol] === 'under8' && data.recoveryUnder8) {
                 trigger = true;
                 signalType = 'Recovery Over 4';
                 strategy = 'over_under';
                 prediction = 4;
                 direction = 'over';
-            } else if (data.recoveryOver1) {
+                setRecoveryMode(prev => ({ ...prev, [symbol]: null }));
+            } else if (recoveryMode[symbol] === 'over1' && data.recoveryOver1) {
                 trigger = true;
                 signalType = 'Recovery Under 6';
                 strategy = 'over_under';
                 prediction = 6;
                 direction = 'under';
+                setRecoveryMode(prev => ({ ...prev, [symbol]: null }));
             }
 
             if (trigger) {
@@ -169,8 +190,10 @@ export default function AutoBotCenter() {
                                             <Badge variant={data.under8Ready ? "default" : "secondary"} className={cn(data.under8Ready && "bg-green-600")}>
                                                 Under 8: {data.under8Ready ? "READY" : "WAIT"}
                                             </Badge>
-                                            {data.over1Entry && <Badge className="bg-yellow-500 text-black animate-bounce">OVER 1 ENTRY!</Badge>}
-                                            {data.under8Entry && <Badge className="bg-yellow-500 text-black animate-bounce">UNDER 8 ENTRY!</Badge>}
+                                            {recoveryMode[data.symbol] === 'over1' && <Badge variant="destructive" className="animate-pulse">RECOVERY: OVER 4</Badge>}
+                                            {recoveryMode[data.symbol] === 'under8' && <Badge variant="destructive" className="animate-pulse">RECOVERY: UNDER 6</Badge>}
+                                            {data.over1Entry && !recoveryMode[data.symbol] && <Badge className="bg-yellow-500 text-black animate-bounce">OVER 1 ENTRY!</Badge>}
+                                            {data.under8Entry && !recoveryMode[data.symbol] && <Badge className="bg-yellow-500 text-black animate-bounce">UNDER 8 ENTRY!</Badge>}
                                         </div>
                                     </div>
                                 ))}
@@ -216,6 +239,8 @@ export default function AutoBotCenter() {
                     </CardContent>
                 </Card>
             </div>
+
+            <AutoTradePanel type="strategy" />
         </div>
     );
 }

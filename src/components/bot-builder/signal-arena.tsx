@@ -20,6 +20,7 @@ import {
 import { Badge } from '../ui/badge';
 import type { SignalBot } from '@/lib/types';
 import SignalBotConfigPanel from './signal-bot-config-panel';
+import AutoTradePanel from './auto-trade-panel';
 
 
 // --- Sound Utility ---
@@ -368,6 +369,9 @@ const SignalArena = () => {
                     ))}
                 </div>
                 <div className="signal-cards-grid">{renderContent()}</div>
+                <div className="mt-8">
+                    <AutoTradePanel type="arena" />
+                </div>
             </div>
         </div>
     );
