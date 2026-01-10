@@ -188,7 +188,9 @@ export const DerivApiProvider = ({ children }: { children: ReactNode }) => {
 
       socket.onclose = () => {
         setIsConnected(false);
-        setActiveAccount(null);
+        // Persistence Fix: Do not clear activeAccount on disconnect.
+        // This prevents the user from being "logged out" if the connection drops.
+        // setActiveAccount(null); 
       };
 
       socket.onerror = (error) => {

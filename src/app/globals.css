@@ -3,84 +3,86 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    --background: 0 0% 96.1%;
-    --foreground: 0 0% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-    --primary: 221 89% 60.8%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 90%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 90%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 221 89% 60.8%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 100%;
-    --ring: 221 89% 60.8%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-  .dark {
-    --background: 240 5.9% 10%;
-    --foreground: 0 0% 98%;
-    --card: 240 5.9% 10%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 5.9% 10%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 221 89% 60.8%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 221 89% 60.8%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 221 89% 60.8%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 221 89% 60.8%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 221 89% 60.8%;
-  }
+    :root {
+        --background: 0 0% 96.1%;
+        --foreground: 0 0% 3.9%;
+        --card: 0 0% 100%;
+        --card-foreground: 0 0% 3.9%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 0 0% 3.9%;
+        --primary: 221 89% 60.8%;
+        --primary-foreground: 0 0% 100%;
+        --secondary: 0 0% 90%;
+        --secondary-foreground: 0 0% 9%;
+        --muted: 0 0% 90%;
+        --muted-foreground: 0 0% 45.1%;
+        --accent: 221 89% 60.8%;
+        --accent-foreground: 0 0% 100%;
+        --destructive: 0 84.2% 60.2%;
+        --destructive-foreground: 0 0% 98%;
+        --border: 0 0% 89.8%;
+        --input: 0 0% 100%;
+        --ring: 221 89% 60.8%;
+        --chart-1: 12 76% 61%;
+        --chart-2: 173 58% 39%;
+        --chart-3: 197 37% 24%;
+        --chart-4: 43 74% 66%;
+        --chart-5: 27 87% 67%;
+        --radius: 0.5rem;
+        --sidebar-background: 0 0% 98%;
+        --sidebar-foreground: 240 5.3% 26.1%;
+        --sidebar-primary: 240 5.9% 10%;
+        --sidebar-primary-foreground: 0 0% 98%;
+        --sidebar-accent: 240 4.8% 95.9%;
+        --sidebar-accent-foreground: 240 5.9% 10%;
+        --sidebar-border: 220 13% 91%;
+        --sidebar-ring: 217.2 91.2% 59.8%;
+    }
+
+    .dark {
+        --background: 240 5.9% 10%;
+        --foreground: 0 0% 98%;
+        --card: 240 5.9% 10%;
+        --card-foreground: 0 0% 98%;
+        --popover: 240 5.9% 10%;
+        --popover-foreground: 0 0% 98%;
+        --primary: 221 89% 60.8%;
+        --primary-foreground: 0 0% 100%;
+        --secondary: 0 0% 14.9%;
+        --secondary-foreground: 0 0% 98%;
+        --muted: 0 0% 14.9%;
+        --muted-foreground: 0 0% 63.9%;
+        --accent: 221 89% 60.8%;
+        --accent-foreground: 0 0% 100%;
+        --destructive: 0 62.8% 30.6%;
+        --destructive-foreground: 0 0% 98%;
+        --border: 0 0% 14.9%;
+        --input: 0 0% 14.9%;
+        --ring: 221 89% 60.8%;
+        --chart-1: 220 70% 50%;
+        --chart-2: 160 60% 45%;
+        --chart-3: 30 80% 55%;
+        --chart-4: 280 65% 60%;
+        --chart-5: 340 75% 55%;
+        --sidebar-background: 240 5.9% 10%;
+        --sidebar-foreground: 240 4.8% 95.9%;
+        --sidebar-primary: 221 89% 60.8%;
+        --sidebar-primary-foreground: 0 0% 100%;
+        --sidebar-accent: 240 3.7% 15.9%;
+        --sidebar-accent-foreground: 240 4.8% 95.9%;
+        --sidebar-border: 240 3.7% 15.9%;
+        --sidebar-ring: 221 89% 60.8%;
+    }
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply bg-background text-foreground;
+    }
 }
 
 /* Draggable Disclaimer */
@@ -89,9 +91,11 @@
     @apply bg-destructive/80 backdrop-blur-sm border border-destructive/50;
     transition: width 0.3s ease, height 0.3s ease;
 }
+
 .draggable-disclaimer.is-open {
     @apply p-4 max-w-sm;
 }
+
 .draggable-disclaimer:not(.is-open) {
     @apply p-2 w-auto cursor-pointer;
 }
@@ -245,9 +249,17 @@
 }
 
 @keyframes pulse {
-    0% { opacity: 0.5; }
-    50% { opacity: 1; }
-    100% { opacity: 0.5; }
+    0% {
+        opacity: 0.5;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0.5;
+    }
 }
 
 .digit-analysis-controls {
@@ -378,7 +390,8 @@
     padding: 12px;
 }
 
-.even-percentage, .odd-percentage {
+.even-percentage,
+.odd-percentage {
     font-size: 1.3rem;
     font-weight: bold;
     margin-bottom: 4px;
@@ -501,7 +514,9 @@
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .info-note {
@@ -519,14 +534,15 @@ footer {
 }
 
 
-/* Signal Arena Styles */
+/* Signal Arena Styles - Premium Dark Glassmorphism */
 .signal-center-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-    background-color: #0f172a;
+    font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: radial-gradient(circle at 50% 10%, #1e293b 0%, #0f172a 100%);
     color: #f8fafc;
     line-height: 1.6;
-    padding: 16px;
+    padding: 24px;
     min-height: 100vh;
+    background-attachment: fixed;
 }
 
 .signal-center-container {
@@ -538,319 +554,365 @@ footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 24px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid #475569;
+    margin-bottom: 32px;
+    padding: 20px;
+    background: rgba(30, 41, 59, 0.4);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
 }
 
 .signal-center-header h1 {
-    font-size: 1.75rem;
-    background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+    font-size: 2rem;
+    font-weight: 800;
+    margin: 0;
+    background: linear-gradient(135deg, #60a5fa 0%, #a855f7 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 16px;
+    text-shadow: 0 0 30px rgba(139, 92, 246, 0.3);
 }
 
 .signal-status-bar {
     display: flex;
-    gap: 20px;
+    gap: 24px;
     align-items: center;
-    font-size: 0.875rem;
-    color: #94a3b8;
-}
-
-.signal-status-indicator {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    font-size: 0.9rem;
+    color: #cbd5e1;
+    font-weight: 500;
 }
 
 .signal-status-dot {
-    width: 10px;
-    height: 10px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     background-color: #ef4444;
-    animation: signal-pulse 2s infinite;
+    box-shadow: 0 0 10px #ef4444;
+    transition: all 0.3s ease;
 }
 
 .signal-status-dot.connected {
     background-color: #10b981;
+    box-shadow: 0 0 15px #10b981;
 }
 
-@keyframes signal-pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-}
-
-.signal-alert-banner {
-    background: linear-gradient(90deg, #dc2626, #f97316);
-    color: white;
-    padding: 12px 20px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    display: none;
-    align-items: center;
-    justify-content: space-between;
-    animation: signal-blink 1s infinite;
-}
-
-@keyframes signal-blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-}
-
+/* Filters */
 .signal-filters {
     display: flex;
     gap: 12px;
-    margin-bottom: 20px;
+    margin-bottom: 32px;
     flex-wrap: wrap;
+    padding: 8px;
+    background: rgba(15, 23, 42, 0.6);
+    border-radius: 24px;
+    backdrop-filter: blur(4px);
+    width: fit-content;
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .signal-filter-btn {
-    padding: 8px 16px;
-    background: #1e293b;
-    border: 1px solid #475569;
-    border-radius: 20px;
+    padding: 10px 24px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 16px;
     color: #94a3b8;
     cursor: pointer;
-    transition: all 0.2s;
-    font-size: 0.875rem;
-}
-
-.signal-filter-btn.active {
-    background: #3b82f6;
-    color: white;
-    border-color: #3b82f6;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
 }
 
 .signal-filter-btn:hover {
-    background: #334155;
+    color: #f8fafc;
+    background: rgba(255, 255, 255, 0.05);
 }
 
+.signal-filter-btn.active {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Cards Grid */
 .signal-cards-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 24px;
 }
 
+/* Glass Card */
 .signal-card {
-    background: #1e293b;
-    border-radius: 12px;
-    padding: 20px;
-    border: 1px solid #475569;
-    transition: transform 0.2s, border-color 0.2s;
+    background: rgba(30, 41, 59, 0.4);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 24px;
+    padding: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
 }
 
 .signal-card:hover {
-    transform: translateY(-2px);
-    border-color: #3b82f6;
+    transform: translateY(-6px);
+    border-color: rgba(96, 165, 250, 0.3);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4),
+        0 0 20px rgba(96, 165, 250, 0.1);
+    z-index: 10;
 }
 
 .signal-card-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 16px;
+    margin-bottom: 24px;
 }
 
 .signal-symbol-info h3 {
-    font-size: 1.125rem;
-    margin-bottom: 4px;
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: #f8fafc;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .signal-symbol-info .symbol {
     color: #94a3b8;
-    font-size: 0.875rem;
+    font-size: 0.85rem;
+    font-family: 'monospace';
+    letter-spacing: 0.05em;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 4px 8px;
+    border-radius: 6px;
 }
 
 .signal-confidence-badge {
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 0.875rem;
-    font-weight: 600;
-    min-width: 60px;
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    min-width: 64px;
     text-align: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.confidence-high { background: #dc2626; color: white; }
-.confidence-medium { background: #f97316; color: white; }
-.confidence-low { background: #10b981; color: white; }
+.confidence-high {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
 
+.confidence-medium {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+}
+
+.confidence-low {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+}
+
+/* Stats Grid */
 .signal-signals-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-    margin-bottom: 20px;
+    gap: 16px;
+    margin-bottom: 24px;
 }
 
 .signal-signal-item {
-    background: rgba(255, 255, 255, 0.05);
-    padding: 12px;
-    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 16px;
+    border-radius: 16px;
     text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    transition: background 0.2s;
+}
+
+.signal-signal-item:hover {
+    background: rgba(0, 0, 0, 0.3);
 }
 
 .signal-signal-label {
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     color: #94a3b8;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .signal-signal-value {
-    font-size: 1.25rem;
-    font-weight: 700;
+    font-size: 1.5rem;
+    font-weight: 800;
+    font-feature-settings: "tnum";
 }
 
-.signal-strong { color: #dc2626; }
-.signal-moderate { color: #ea580c; }
-.signal-weak { color: #6b7280; }
+.signal-strong {
+    color: #34d399;
+    text-shadow: 0 0 15px rgba(52, 211, 153, 0.3);
+}
+
+.signal-moderate {
+    color: #fbbf24;
+}
+
+.signal-weak {
+    color: #94a3b8;
+}
 
 .signal-stats-row {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 16px;
-    font-size: 0.875rem;
-}
-
-.signal-chi-square {
-    color: #94a3b8;
+    margin-bottom: 20px;
+    font-size: 0.9rem;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
 }
 
 .signal-bias-indicator {
-    padding: 4px 8px;
-    border-radius: 4px;
+    padding: 4px 12px;
+    border-radius: 8px;
     font-weight: 600;
+    font-size: 0.8rem;
+    letter-spacing: 0.02em;
 }
 
-.bias-strong { background: #dc2626; color: white; }
-.bias-detected { background: #ea580c; color: white; }
-.bias-fair { background: #10b981; color: white; }
-
-.signal-reasons {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 16px;
+.bias-strong {
+    background: rgba(220, 38, 38, 0.2);
+    color: #f87171;
+    border: 1px solid rgba(220, 38, 38, 0.4);
 }
 
-.signal-reason-tag {
-    padding: 4px 8px;
-    background: rgba(59, 130, 246, 0.2);
-    color: #3b82f6;
-    border-radius: 4px;
-    font-size: 0.75rem;
+.bias-detected {
+    background: rgba(234, 88, 12, 0.2);
+    color: #fb923c;
+    border: 1px solid rgba(234, 88, 12, 0.4);
 }
+
+.bias-fair {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
 
 .signal-digits-table {
     display: grid;
     grid-template-columns: repeat(10, 1fr);
-    gap: 4px;
-    margin-bottom: 16px;
+    gap: 6px;
+    margin-bottom: 24px;
 }
 
 .signal-digit-cell {
-    padding: 4px 2px;
+    padding: 8px 4px;
     text-align: center;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 4px;
-    font-weight: 600;
-    position: relative;
-    transition: all 0.3s;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    font-weight: 700;
     aspect-ratio: 1;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    border: 1px solid transparent;
+    transition: all 0.3s;
 }
 
 .signal-digit-label {
-    font-size: 0.65rem;
-    color: #94a3b8;
-    margin-bottom: 2px;
-    line-height: 1;
+    font-size: 0.7rem;
+    color: #64748b;
+    margin-bottom: 4px;
 }
 
 .signal-digit-value {
-    font-size: 0.75rem;
-    line-height: 1;
+    font-size: 0.85rem;
+    color: #e2e8f0;
 }
 
 .signal-digit-hot {
-    background: #dc2626;
-    color: white;
-    animation: signal-hotPulse 1s infinite;
+    background: rgba(220, 38, 38, 0.2);
+    border-color: rgba(220, 38, 38, 0.5);
+    box-shadow: 0 0 15px rgba(220, 38, 38, 0.2);
+    animation: hot-pulse 1.5s infinite;
 }
 
 .signal-digit-warm {
-    background: #f97316;
-    color: white;
+    background: rgba(234, 88, 12, 0.2);
+    border-color: rgba(234, 88, 12, 0.5);
 }
 
-@keyframes signal-hotPulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.05); }
+@keyframes hot-pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4);
+    }
+
+    70% {
+        box-shadow: 0 0 0 6px rgba(220, 38, 38, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+    }
 }
 
-.signal-card-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 16px;
-    padding-top: 16px;
-    border-top: 1px solid #475569;
-}
-
-.signal-hot-digits {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: #94a3b8;
-    font-size: 0.875rem;
-}
-
-.signal-bot-buttons {
-    display: flex;
-    gap: 8px;
-}
-
+/* Action Button */
 .signal-bot-btn {
-    padding: 8px 16px;
-    border: none;
-    border-radius: 6px;
-    font-weight: 600;
-    cursor: pointer;
+    width: 100%;
+    padding: 14px;
+    border-radius: 14px;
+    font-weight: 700;
+    font-size: 0.95rem;
     display: flex;
     align-items: center;
-    gap: 8px;
-    transition: opacity 0.2s;
-}
-
-.signal-bot-btn:hover {
-    opacity: 0.9;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border: none;
+    color: white;
 }
 
 .signal-bot-over {
-    background: #10b981;
-    color: white;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
 }
 
 .signal-bot-under {
-    background: #dc2626;
-    color: white;
+    background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+    box-shadow: 0 4px 20px rgba(244, 63, 94, 0.3);
+}
+
+.signal-bot-btn:hover {
+    transform: scale(1.02);
+    filter: brightness(1.1);
 }
 
 .signal-bot-btn:disabled {
-    opacity: 0.5;
+    opacity: 0.7;
     cursor: not-allowed;
+    filter: grayscale(1);
 }
 
 .signal-update-time {
-    color: #94a3b8;
-    font-size: 0.75rem;
     text-align: right;
-    margin-top: 4px;
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-top: 16px;
+    font-style: italic;
 }
 
 .signal-no-data {
@@ -877,21 +939,26 @@ footer {
 }
 
 @keyframes signal-spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 @media (max-width: 768px) {
     .signal-cards-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .signal-center-header {
         flex-direction: column;
         align-items: flex-start;
         gap: 16px;
     }
-    
+
     .signal-status-bar {
         width: 100%;
         justify-content: space-between;
