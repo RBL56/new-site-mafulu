@@ -112,7 +112,7 @@ export default function AutoBotCenter() {
                             entryRangeStart: 0,
                             entryRangeEnd: 9,
                         }
-                    });
+                    }, false);
                     setLastTradeTime(prev => ({ ...prev, [symbol]: now }));
                 }
             }

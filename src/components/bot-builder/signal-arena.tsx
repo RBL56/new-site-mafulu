@@ -163,6 +163,11 @@ const SignalArena = () => {
     const renderContent = () => {
         if (!isConnected) return <div className="signal-loading"><div className="signal-loading-spinner"></div><p>Connecting to Deriv API...</p></div>;
 
+        // If connected but no analysis data yet, show collecting message
+        if (Object.keys(analysisData).length === 0) {
+            return <div className="signal-loading"><div className="signal-loading-spinner" style={{ borderTopColor: '#f59e0b' }}></div><p>Collecting tick data (need 100 ticks)...</p></div>;
+        }
+
         if (displayedCards.length === 0) {
             return <div className="signal-no-data"><p>No signals match the current filter.</p></div>
         }

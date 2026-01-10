@@ -88,10 +88,24 @@ const analyzeDigits = (digits: number[], symbol: string, name: string) => {
     const reasons: string[] = [];
     let strongSignalType = '';
 
-    if (percentages.over_3 >= 66) { confidence += 35; reasons.push("Strong Over 3"); strongSignalType = 'Strong Over 3'; }
+    // Dynamic Threshold: User requested to set back to 66% for all markets
+    // and ensure refreshing after every tick.
+    const strongThreshold = 66.0;
+
+    if (percentages.over_3 >= strongThreshold) {
+        confidence += 35;
+        reasons.push(`Strong Over 3 (> ${strongThreshold}%)`);
+        strongSignalType = 'Strong Over 3';
+    }
     else if (percentages.over_3 >= 61) { confidence += 15; reasons.push("Moderate Over 3"); }
-    if (percentages.under_6 >= 66) { confidence += 35; reasons.push("Strong Under 6"); strongSignalType = 'Strong Under 6'; }
+
+    if (percentages.under_6 >= strongThreshold) {
+        confidence += 35;
+        reasons.push(`Strong Under 6 (> ${strongThreshold}%)`);
+        strongSignalType = 'Strong Under 6';
+    }
     else if (percentages.under_6 >= 61) { confidence += 15; reasons.push("Moderate Under 6"); }
+
     if (percentages.even >= 56 || percentages.even <= 44) { confidence += 15; reasons.push("Strong Even/Odd Bias"); }
     if (chiSquare.pValue < 0.01) { confidence += 20; reasons.push("Strong Statistical Bias"); }
     else if (chiSquare.pValue < 0.05) { confidence += 10; reasons.push("Statistical Bias"); }
@@ -212,6 +226,9 @@ export const useSignalAnalysis = () => {
         let hasNewStrongSignal = false;
         const newAutoBotData: { [key: string]: any } = {};
 
+        // Skip analysis if no data
+        if (Object.keys(tickDataRef.current).length === 0) return;
+
         Object.keys(tickDataRef.current).forEach(symbol => {
             const digits = tickDataRef.current[symbol];
 
@@ -243,10 +260,11 @@ export const useSignalAnalysis = () => {
             }
         });
 
-        console.log(`📊 Analysis run at ${new Date().toLocaleTimeString()}. Signals found:`, Object.keys(analysisDataRef.current).length);
+        // Only log if something changed or meaningfully processed, to avoid console spam
+        // console.log(`📊 Analysis run at ${new Date().toLocaleTimeString()}`);
 
         setAnalysisData({ ...analysisDataRef.current });
-        setAutoBotData(newAutoBotData);
+        setAutoBotData(newAutoBotData); // This might be expensive if many keys, but 1s interval is fine.
         setLastUpdateTime(new Date().toLocaleTimeString());
     }, []);
 
@@ -267,6 +285,7 @@ export const useSignalAnalysis = () => {
                     subscribedSymbols.current.add(symbol);
                     console.log(`✅ Subscribed to ticks for ${symbol}, history length: ${newDigits.length}`);
                 }
+                // We don't run analysis here immediately anymore, the interval will pick it up
             }
         }
 
@@ -278,9 +297,9 @@ export const useSignalAnalysis = () => {
             const updatedTicks = [...existingTicks, newDigit];
             if (updatedTicks.length > 1000) updatedTicks.shift();
             tickDataRef.current[symbol] = updatedTicks;
-            runAnalysis();
+            // Removed direct runAnalysis() call
         }
-    }, [extractLastDigit, runAnalysis]);
+    }, [extractLastDigit, api]);
 
     const manageSubscriptions = useCallback(() => {
         if (!api || !isConnected || api.readyState !== WebSocket.OPEN) return;
@@ -307,12 +326,22 @@ export const useSignalAnalysis = () => {
             return () => unsubscribe();
         } else {
             console.log("🔌 Disconnected from Deriv API. Resetting subscription state.");
-            // Reset subscription state so we re-subscribe on next connection
             subscribedSymbols.current.clear();
             historyFetchedSymbols.current.clear();
             tickDataRef.current = {};
         }
     }, [isConnected, manageSubscriptions, handleMessage, subscribeToMessages]);
+
+    // Interval for running analysis and updating UI
+    useEffect(() => {
+        if (!isConnected) return;
+
+        const intervalId = setInterval(() => {
+            runAnalysis();
+        }, 1000); // Run analysis every 1 second
+
+        return () => clearInterval(intervalId);
+    }, [isConnected, runAnalysis]);
 
     return {
         analysisData,

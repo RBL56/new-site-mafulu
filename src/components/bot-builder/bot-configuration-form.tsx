@@ -34,10 +34,11 @@ const formSchema = z.object({
   entryPointType: z.enum(['single', 'consecutive']).optional(),
   entryRangeStart: z.coerce.number().min(0).max(9).optional(),
   entryRangeEnd: z.coerce.number().min(0).max(9).optional(),
+  maxTrades: z.coerce.number().min(1).optional(),
 });
 
 export type BotConfigurationValues = z.infer<typeof formSchema>;
-export type SignalBotConfigurationValues = Pick<BotConfigurationValues, 'initialStake' | 'takeProfit' | 'stopLossConsecutive' | 'useMartingale' | 'martingaleFactor'> & { autoTrade: boolean };
+export type SignalBotConfigurationValues = Pick<BotConfigurationValues, 'initialStake' | 'takeProfit' | 'stopLossConsecutive' | 'useMartingale' | 'martingaleFactor' | 'maxTrades'> & { autoTrade: boolean };
 
 
 export default function BotConfigurationForm() {

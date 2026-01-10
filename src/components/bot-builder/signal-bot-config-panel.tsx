@@ -59,6 +59,17 @@ const SignalBotConfigPanel = () => {
                             className="bg-background"
                         />
                     </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="signal-max-trades">Max Trades</Label>
+                        <Input
+                            id="signal-max-trades"
+                            type="number"
+                            placeholder="3"
+                            value={signalBotConfig.maxTrades || ''}
+                            onChange={(e) => handleInputChange('maxTrades', e.target.value)}
+                            className="bg-background"
+                        />
+                    </div>
                     <div className="flex items-center space-x-2 pt-6">
                         <Switch
                             id="signal-autotrade"

@@ -46,6 +46,10 @@ const SignalCard: React.FC<SignalCardProps> = ({
     const underPercentage = card.percentages.under_6 || 0;
     const isRunning = signalBots.some(b => b.market === card.symbol && b.status === 'running');
 
+    // Strategy-specific calculations
+    const sum02 = (card.percentages.digit_0 || 0) + (card.percentages.digit_1 || 0) + (card.percentages.digit_2 || 0);
+    const sum79 = (card.percentages.digit_7 || 0) + (card.percentages.digit_8 || 0) + (card.percentages.digit_9 || 0);
+
     return (
         <div className={cn("signal-card", isRunning && "border-primary/50 shadow-md shadow-primary/10")}>
             <div className="signal-card-header">
@@ -74,18 +78,37 @@ const SignalCard: React.FC<SignalCardProps> = ({
             )}
 
             <div className="signal-signals-grid">
-                <div className="signal-signal-item">
-                    <div className="signal-signal-label">Over 3</div>
-                    <div className={cn("signal-signal-value", getSignalClass(card.percentages.over_3, 'over_under'))}>
-                        {card.percentages.over_3.toFixed(1)}%
-                    </div>
-                </div>
-                <div className="signal-signal-item">
-                    <div className="signal-signal-label">Under 6</div>
-                    <div className={cn("signal-signal-value", getSignalClass(card.percentages.under_6, 'over_under'))}>
-                        {card.percentages.under_6.toFixed(1)}%
-                    </div>
-                </div>
+                {autoBotData ? (
+                    <>
+                        <div className="signal-signal-item">
+                            <div className="signal-signal-label">0-2 Sum</div>
+                            <div className={cn("signal-signal-value", sum02 <= 10.5 ? "text-green-500 font-bold" : "text-muted-foreground")}>
+                                {sum02.toFixed(1)}%
+                            </div>
+                        </div>
+                        <div className="signal-signal-item">
+                            <div className="signal-signal-label">7-9 Sum</div>
+                            <div className={cn("signal-signal-value", sum79 <= 10.5 ? "text-green-500 font-bold" : "text-muted-foreground")}>
+                                {sum79.toFixed(1)}%
+                            </div>
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        <div className="signal-signal-item">
+                            <div className="signal-signal-label">Over 3</div>
+                            <div className={cn("signal-signal-value", getSignalClass(card.percentages.over_3, 'over_under'))}>
+                                {card.percentages.over_3.toFixed(1)}%
+                            </div>
+                        </div>
+                        <div className="signal-signal-item">
+                            <div className="signal-signal-label">Under 6</div>
+                            <div className={cn("signal-signal-value", getSignalClass(card.percentages.under_6, 'over_under'))}>
+                                {card.percentages.under_6.toFixed(1)}%
+                            </div>
+                        </div>
+                    </>
+                )}
                 <div className="signal-signal-item">
                     <div className="signal-signal-label">Even</div>
                     <div className={cn("signal-signal-value", getSignalClass(card.percentages.even, 'even_odd'))}>
@@ -139,7 +162,10 @@ const SignalCard: React.FC<SignalCardProps> = ({
                     )}
                 </div>
             </div>
-            <div className="signal-update-time">Updated: {new Date(card.update_time).toLocaleTimeString()}</div>
+            <div className="flex justify-between items-center px-3 pb-2 text-[10px] text-muted-foreground">
+                <div className="signal-update-time">Updated: {new Date(card.update_time).toLocaleTimeString()}</div>
+                <div>Ticks: {card.ticks_analyzed}</div>
+            </div>
         </div>
     );
 };

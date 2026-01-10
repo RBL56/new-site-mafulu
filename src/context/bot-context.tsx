@@ -29,7 +29,7 @@ interface BotContextType {
   resetStats: () => void;
   form: UseFormReturn<BotConfigurationValues> | null;
   setForm: (form: UseFormReturn<BotConfigurationValues>) => void;
-  tradeLogRef: React.RefObject<HTMLDivElement>;
+  tradeLogRef: React.RefObject<HTMLDivElement | null>;
 
   // SignalBot
   signalBots: SignalBot[];
@@ -111,6 +111,7 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
     useMartingale: true,
     martingaleFactor: 2.1,
     autoTrade: false,
+    maxTrades: 3,
   });
   const signalBotsRef = useRef<SignalBot[]>([]);
 
@@ -376,67 +377,69 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
           purchaseContract('speed', configRef.current, currentStakeRef.current);
         }
       } else if (botType === 'signal' && signalBotId) {
-        setSignalBots(currentBots => {
-          const newBots = [...currentBots];
-          const botIndex = newBots.findIndex(b => b.id === signalBotId);
+        const currentBots = signalBotsRef.current;
+        const botIndex = currentBots.findIndex(b => b.id === signalBotId);
 
-          if (botIndex === -1) return currentBots;
+        if (botIndex === -1) return;
 
-          const bot = newBots[botIndex];
+        const bot = currentBots[botIndex];
 
-          const newProfit = bot.profit + profit;
-          let consecutiveLosses = bot.consecutiveLosses || 0;
-          let nextStake = bot.config.initialStake;
+        // Check if this contract has already been processed for this bot
+        if (bot.trades.some(t => t.id === contractId)) {
+          return;
+        }
 
-          if (isWin) {
-            consecutiveLosses = 0;
-          } else {
-            consecutiveLosses++;
-            if (bot.config.useMartingale && bot.config.martingaleFactor) {
-              nextStake = contractInfo.stake * bot.config.martingaleFactor;
-            }
+        const newProfit = bot.profit + profit;
+        let consecutiveLosses = bot.consecutiveLosses || 0;
+        let nextStake = bot.config.initialStake;
+
+        if (isWin) {
+          consecutiveLosses = 0;
+        } else {
+          consecutiveLosses++;
+          if (bot.config.useMartingale && bot.config.martingaleFactor) {
+            nextStake = contractInfo.stake * bot.config.martingaleFactor;
           }
+        }
 
-          const newTrade: Trade = {
-            id: contractId,
-            description: contract.longcode,
-            marketId: contract.underlying,
-            stake: contractInfo.stake,
-            payout: contract.payout,
-            isWin,
-            entryDigit,
-            exitDigit,
-          };
+        const newTrade: Trade = {
+          id: contractId,
+          description: contract.longcode,
+          marketId: contract.underlying,
+          stake: contractInfo.stake,
+          payout: contract.payout,
+          isWin,
+          entryDigit,
+          exitDigit,
+        };
 
-          const updatedBot: SignalBot = {
-            ...bot,
-            profit: newProfit,
-            consecutiveLosses,
-            trades: [newTrade, ...bot.trades]
-          };
+        const updatedBot: SignalBot = {
+          ...bot,
+          profit: newProfit,
+          consecutiveLosses,
+          trades: [newTrade, ...bot.trades]
+        };
 
-          // Check stop conditions
-          // NEW: Limit to 1 trade max
-          if (updatedBot.trades.length >= 3) {
-            toast({ title: "Trade Limit Reached", description: `Signal Bot for ${updatedBot.name} stopped after 3 trades.` });
-            updatedBot.status = 'stopped';
-          } else if (updatedBot.config.takeProfit && updatedBot.profit >= updatedBot.config.takeProfit) {
-            toast({ title: "Take-Profit Hit", description: `Signal Bot for ${updatedBot.name} stopped.` });
-            updatedBot.status = 'stopped';
-          } else if (updatedBot.config.stopLossType === 'consecutive_losses' && updatedBot.config.stopLossConsecutive && consecutiveLosses >= updatedBot.config.stopLossConsecutive) {
-            toast({ title: "Stop-Loss Hit", description: `Signal Bot for ${updatedBot.name} stopped.` });
-            updatedBot.status = 'stopped';
-          }
+        // Check stop conditions
+        const maxTrades = updatedBot.config.maxTrades;
+        if (maxTrades && updatedBot.trades.length >= maxTrades) {
+          toast({ title: "Trade Limit Reached", description: `Signal Bot for ${updatedBot.name} stopped after ${maxTrades} trades.` });
+          updatedBot.status = 'stopped';
+        } else if (updatedBot.config.takeProfit && updatedBot.profit >= updatedBot.config.takeProfit) {
+          toast({ title: "Take-Profit Hit", description: `Signal Bot for ${updatedBot.name} stopped.` });
+          updatedBot.status = 'stopped';
+        } else if (updatedBot.config.stopLossType === 'consecutive_losses' && updatedBot.config.stopLossConsecutive && consecutiveLosses >= updatedBot.config.stopLossConsecutive) {
+          toast({ title: "Stop-Loss Hit", description: `Signal Bot for ${updatedBot.name} stopped.` });
+          updatedBot.status = 'stopped';
+        }
 
-          newBots[botIndex] = updatedBot;
+        // Update state
+        setSignalBots(prev => prev.map(b => b.id === updatedBot.id ? updatedBot : b));
 
-          // If not stopped, purchase next contract
-          if (updatedBot.status === 'running') {
-            purchaseContract('signal', updatedBot.config, nextStake, updatedBot.id);
-          }
-
-          return newBots;
-        });
+        // Attempt next trade if still running
+        if (updatedBot.status === 'running') {
+          purchaseContract('signal', updatedBot.config, nextStake, updatedBot.id);
+        }
       }
     }
   }, [stopBot, toast, extractLastDigit, purchaseContract]);
@@ -498,7 +501,7 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [api, isConnected, toast, connectDigit, digitStatus, purchaseContract]);
 
-  const startSignalBot = useCallback((newBot: SignalBot) => {
+  const startSignalBot = useCallback((newBot: SignalBot, switchTab: boolean = true) => {
     // Apply global signal bot config
     const finalConfig: BotConfigurationValues = {
       ...newBot.config,
@@ -508,6 +511,7 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
       stopLossConsecutive: signalBotConfig.stopLossConsecutive,
       useMartingale: signalBotConfig.useMartingale,
       martingaleFactor: signalBotConfig.martingaleFactor,
+      maxTrades: signalBotConfig.maxTrades,
       useBulkTrading: false, // Ensure bulky trading is disabled
     };
 
@@ -521,8 +525,11 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
     signalBotsRef.current = [...signalBotsRef.current, botToStart];
 
     purchaseContract('signal', botToStart.config, botToStart.config.initialStake, botToStart.id);
-    setActiveTab('bot-builder');
-    setActiveBuilderTab('signalbot');
+
+    if (switchTab) {
+      setActiveTab('bot-builder');
+      setActiveBuilderTab('signalbot');
+    }
   }, [purchaseContract, setActiveTab, setActiveBuilderTab, signalBotConfig]);
 
   const stopSignalBot = useCallback((id: string) => {
@@ -635,7 +642,7 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
             }
           };
 
-          startSignalBot(botConfig);
+          startSignalBot(botConfig, false);
           autoTradedSymbolsRef.current.add(symbol);
 
           // Clear from auto-traded set after some time to allow re-triggering for next cycle

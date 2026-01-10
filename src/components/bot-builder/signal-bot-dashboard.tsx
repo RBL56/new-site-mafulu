@@ -23,7 +23,10 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/colla
 import SignalBotTradeLog from './signal-bot-trade-log';
 
 export default function SignalBotDashboard() {
-    const { signalBots, stopSignalBot, resetSignalBots } = useBot();
+    const { signalBots: allSignalBots, stopSignalBot, resetSignalBots } = useBot();
+
+    // Filter out auto-bots from the main dashboard
+    const signalBots = allSignalBots.filter(bot => !bot.id.startsWith('auto-'));
 
     const formatCurrency = (value: number) => {
         return new Intl.NumberFormat('en-US', {
