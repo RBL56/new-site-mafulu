@@ -243,13 +243,18 @@ export const useSignalAnalysis = () => {
             }
         });
 
+        console.log(`📊 Analysis run at ${new Date().toLocaleTimeString()}. Signals found:`, Object.keys(analysisDataRef.current).length);
+
         setAnalysisData({ ...analysisDataRef.current });
         setAutoBotData(newAutoBotData);
         setLastUpdateTime(new Date().toLocaleTimeString());
     }, []);
 
     const handleMessage = useCallback((data: any) => {
-        if (data.error) return;
+        if (data.error) {
+            console.error("API Error in useSignalAnalysis:", data.error);
+            return;
+        }
 
         if (data.msg_type === 'history') {
             const symbol = data.echo_req.ticks_history;
@@ -260,6 +265,7 @@ export const useSignalAnalysis = () => {
                 if (api && api.readyState === WebSocket.OPEN) {
                     api.send(JSON.stringify({ ticks: symbol, subscribe: 1 }));
                     subscribedSymbols.current.add(symbol);
+                    console.log(`✅ Subscribed to ticks for ${symbol}, history length: ${newDigits.length}`);
                 }
             }
         }
@@ -286,6 +292,7 @@ export const useSignalAnalysis = () => {
             if (!historyFetchedSymbols.current.has(symbol) && api.readyState === WebSocket.OPEN) {
                 api.send(JSON.stringify({ ticks_history: symbol, end: 'latest', count: 1000, style: 'ticks' }));
                 historyFetchedSymbols.current.add(symbol);
+                console.log(`📡 Requested history for ${symbol}`);
             }
             setTimeout(() => subscribeWithDelay(index + 1), 200);
         };
@@ -294,9 +301,16 @@ export const useSignalAnalysis = () => {
 
     useEffect(() => {
         if (isConnected) {
+            console.log("🔌 Connected to Deriv API, initializing subscriptions...");
             manageSubscriptions();
             const unsubscribe = subscribeToMessages(handleMessage);
             return () => unsubscribe();
+        } else {
+            console.log("🔌 Disconnected from Deriv API. Resetting subscription state.");
+            // Reset subscription state so we re-subscribe on next connection
+            subscribedSymbols.current.clear();
+            historyFetchedSymbols.current.clear();
+            tickDataRef.current = {};
         }
     }, [isConnected, manageSubscriptions, handleMessage, subscribeToMessages]);
 

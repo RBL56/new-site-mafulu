@@ -10,9 +10,10 @@ import { cn } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
 import { useDerivApi } from '@/context/deriv-api-context';
 import AutoTradePanel from './auto-trade-panel';
+import SignalCard from './signal-card';
 
 export default function AutoBotCenter() {
-    const { autoBotData, startSignalBot, signalBots } = useBot();
+    const { autoBotData, startSignalBot, signalBots, analysisData } = useBot();
     const { isConnected } = useDerivApi();
     const [isAutoBotEnabled, setIsAutoBotEnabled] = useState(false);
     const [lastTradeTime, setLastTradeTime] = useState<{ [key: string]: number }>({});
@@ -166,41 +167,40 @@ export default function AutoBotCenter() {
             </Card>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <Card className="lg:col-span-2">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Shield className="h-5 w-5 text-primary" />
-                            Live Market Analysis
-                        </CardTitle>
-                        <CardDescription>Real-time strategy readiness for all symbols (1000 Ticks)</CardDescription>
+                <Card className="lg:col-span-2 shadow-xl border-border/50">
+                    <CardHeader className="border-b bg-muted/50">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Shield className="h-5 w-5 text-primary" />
+                                    Dynamic Market Analysis
+                                </CardTitle>
+                                <CardDescription>Real-time strategy readiness and signal power</CardDescription>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="bg-background/50">
+                                    {Object.keys(analysisData).length} Markets Online
+                                </Badge>
+                            </div>
+                        </div>
                     </CardHeader>
-                    <CardContent>
-                        <ScrollArea className="h-[500px] pr-4">
-                            <div className="space-y-3">
-                                {Object.values(autoBotData).map((data: any) => (
-                                    <div key={data.symbol} className="flex items-center justify-between p-3 rounded-md bg-secondary/30 border border-border/50">
-                                        <div className="flex flex-col">
-                                            <span className="font-bold">{data.name}</span>
-                                            <span className="text-xs text-muted-foreground">{data.symbol}</span>
-                                        </div>
-                                        <div className="flex gap-2">
-                                            <Badge variant={data.over1Ready ? "default" : "secondary"} className={cn(data.over1Ready && "bg-green-600")}>
-                                                Over 1: {data.over1Ready ? "READY" : "WAIT"}
-                                            </Badge>
-                                            <Badge variant={data.under8Ready ? "default" : "secondary"} className={cn(data.under8Ready && "bg-green-600")}>
-                                                Under 8: {data.under8Ready ? "READY" : "WAIT"}
-                                            </Badge>
-                                            {recoveryMode[data.symbol] === 'over1' && <Badge variant="destructive" className="animate-pulse">RECOVERY: OVER 4</Badge>}
-                                            {recoveryMode[data.symbol] === 'under8' && <Badge variant="destructive" className="animate-pulse">RECOVERY: UNDER 6</Badge>}
-                                            {data.over1Entry && !recoveryMode[data.symbol] && <Badge className="bg-yellow-500 text-black animate-bounce">OVER 1 ENTRY!</Badge>}
-                                            {data.under8Entry && !recoveryMode[data.symbol] && <Badge className="bg-yellow-500 text-black animate-bounce">UNDER 8 ENTRY!</Badge>}
-                                        </div>
-                                    </div>
+                    <CardContent className="p-6">
+                        <ScrollArea className="h-[600px] pr-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {Object.values(analysisData).map((card: any) => (
+                                    <SignalCard
+                                        key={card.symbol}
+                                        card={card}
+                                        signalBots={signalBots}
+                                        onStartBot={startSignalBot}
+                                        autoBotData={autoBotData[card.symbol]}
+                                        recoveryMode={recoveryMode[card.symbol]}
+                                    />
                                 ))}
-                                {Object.keys(autoBotData).length === 0 && (
-                                    <div className="text-center py-20 text-muted-foreground">
+                                {Object.keys(analysisData).length === 0 && (
+                                    <div className="col-span-full text-center py-20 text-muted-foreground bg-muted/20 rounded-lg border border-dashed">
                                         <AlertCircle className="h-10 w-10 mx-auto mb-2 opacity-20" />
-                                        <p>Analyzing markets... Waiting for 1000 ticks data.</p>
+                                        <p>Connecting to Deriv for market data...</p>
                                     </div>
                                 )}
                             </div>

@@ -93,7 +93,11 @@ export default function Header() {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
-              <Button>Sign Up</Button>
+              <Button asChild>
+                <Link href="https://track.deriv.com/_kpv4D_CsW1VB4VdSfJsOp2Nd7ZgqdRLk/1/" target="_blank">
+                  Sign Up
+                </Link>
+              </Button>
             </>
           )}
         </div>
