@@ -25,8 +25,8 @@ export const metadata: Metadata = {
   icons: {
     icon: '/deriv-logo.svg',
     apple: [
-        { url: '/assets/icons/pwa/icon-152x152.png', sizes: '152x152' },
-        { url: '/assets/icons/pwa/icon-192x192.png', sizes: '180x180' }
+      { url: '/assets/icons/pwa/icon-152x152.png', sizes: '152x152' },
+      { url: '/assets/icons/pwa/icon-192x192.png', sizes: '180x180' }
     ]
   }
 };
@@ -34,6 +34,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   themeColor: '#ff444f',
   viewportFit: 'cover',
+  maximumScale: 1,
+  userScalable: false,
 }
 
 export default function RootLayout({
@@ -51,8 +53,8 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <ThemeProvider
-            defaultTheme="system"
-            storageKey="vite-ui-theme"
+          defaultTheme="system"
+          storageKey="vite-ui-theme"
         >
           <DerivApiProvider>
             <DigitAnalysisProvider>

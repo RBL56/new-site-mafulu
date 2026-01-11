@@ -112,6 +112,37 @@ const analyzeDigits = (digits: number[], symbol: string, name: string) => {
     const hotDigits = counts.map((c, i) => ({ c, i })).filter(d => (d.c / total) * 100 >= 14).map(d => d.i);
     if (hotDigits.length > 0) { confidence += 15; reasons.push("Hot Digit(s)"); }
 
+    // Entry Point Scanning (Last 60 ticks)
+    const scanTicks = digits.slice(-61); // We need 61 to get 60 transitions
+    const over3EntryPoints: number[] = [];
+    const under6EntryPoints: number[] = [];
+
+    if (scanTicks.length >= 2) {
+        const over3Transitions: { [key: number]: number } = {};
+        const under6Transitions: { [key: number]: number } = {};
+
+        for (let i = 0; i < scanTicks.length - 1; i++) {
+            const current = scanTicks[i];
+            const next = scanTicks[i + 1];
+
+            // Over 3 Entry: Leads to 0, 1, 2, or 3
+            if (next <= 3) {
+                over3Transitions[current] = (over3Transitions[current] || 0) + 1;
+            }
+
+            // Under 6 Entry: Leads to 6, 7, 8, or 9
+            if (next >= 6) {
+                under6Transitions[current] = (under6Transitions[current] || 0) + 1;
+            }
+        }
+
+        // Finalize: Need at least 2 occurrences
+        for (let i = 0; i <= 9; i++) {
+            if (over3Transitions[i] >= 2) over3EntryPoints.push(i);
+            if (under6Transitions[i] >= 2) under6EntryPoints.push(i);
+        }
+    }
+
     return {
         symbol,
         name,
@@ -119,6 +150,8 @@ const analyzeDigits = (digits: number[], symbol: string, name: string) => {
         chi_square: chiSquare,
         confidence: Math.min(100, confidence),
         hot_digits: hotDigits,
+        entry_points_over3: over3EntryPoints,
+        entry_points_under6: under6EntryPoints,
         counts, // Pass raw counts for further analysis
         ticks_analyzed: total,
         update_time: new Date().toISOString(),
@@ -149,8 +182,8 @@ const analyzeAutoBotStrategy = (digits: number[], symbol: string, name: string) 
     const under8Ready = (percentages[7] + percentages[8] + percentages[9]) / 3 <= 10.5;
 
     // Entry Point Logic
-    // Touching digits in last N ticks
-    const last10 = digits.slice(-10);
+    // Touching digits in last 4 ticks BEFORE the current one
+    const prev4Ticks = digits.slice(-5, -1);
     const last5 = digits.slice(-5);
 
     // Most/Least appearing for Entry exclusion
@@ -160,9 +193,9 @@ const analyzeAutoBotStrategy = (digits: number[], symbol: string, name: string) 
 
     let over1Entry = false;
     if (over1Ready) {
-        const count03 = last10.filter(d => d >= 0 && d <= 3).length;
-        const currentDigit = last10[last10.length - 1];
-        if (count03 > 2 && (currentDigit === 5 || currentDigit === 6)) {
+        const count03 = prev4Ticks.filter(d => d >= 0 && d <= 3).length;
+        const currentDigit = digits[digits.length - 1];
+        if (count03 >= 2 && (currentDigit === 5 || currentDigit === 6)) {
             if (currentDigit !== mostAppearing && currentDigit !== leastAppearing) {
                 over1Entry = true;
             }
@@ -171,9 +204,9 @@ const analyzeAutoBotStrategy = (digits: number[], symbol: string, name: string) 
 
     let under8Entry = false;
     if (under8Ready) {
-        const count79 = last10.filter(d => d >= 7 && d <= 9).length;
-        const currentDigit = last10[last10.length - 1];
-        if (count79 > 2 && (currentDigit === 7 || currentDigit === 4)) { // Strategy says 7 or 4
+        const count79 = prev4Ticks.filter(d => d >= 7 && d <= 9).length;
+        const currentDigit = digits[digits.length - 1];
+        if (count79 >= 2 && (currentDigit === 7 || currentDigit === 4)) {
             if (currentDigit !== mostAppearing && currentDigit !== leastAppearing) {
                 under8Entry = true;
             }
@@ -196,7 +229,7 @@ const analyzeAutoBotStrategy = (digits: number[], symbol: string, name: string) 
         under8Entry,
         recoveryUnder8,
         recoveryOver1,
-        lastDigit: last10[last10.length - 1],
+        lastDigit: digits[digits.length - 1],
         percentages,
         ticks_analyzed: total
     };

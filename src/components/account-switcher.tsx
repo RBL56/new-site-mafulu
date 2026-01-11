@@ -57,11 +57,14 @@ export function AccountSwitcher() {
             {accountList.map((account) => (
               <DropdownMenuItem key={account.loginid} onSelect={() => switchAccount(account.loginid)} disabled={account.loginid === activeAccount.loginid}>
                 <div className={cn("flex-1 flex justify-between items-center", account.loginid === activeAccount.loginid && "font-bold")}>
-                  <div>
-                    <p>{account.loginid}</p>
-                    <p className={cn("text-xs", account.is_virtual ? "text-green-600" : "text-blue-600")}>{account.is_virtual ? 'Demo' : 'Real'}</p>
+                  <div className="flex flex-col">
+                    <p className="text-sm">{account.loginid}</p>
+                    <p className={cn("text-[10px]", account.is_virtual ? "text-green-600" : "text-blue-600")}>{account.is_virtual ? 'Demo' : 'Real'}</p>
                   </div>
-                  {account.loginid === activeAccount.loginid && <Check className="h-4 w-4" />}
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm whitespace-nowrap">{formatCurrency(account.balance, account.currency)}</span>
+                    {account.loginid === activeAccount.loginid && <Check className="h-4 w-4 shrink-0" />}
+                  </div>
                 </div>
               </DropdownMenuItem>
             ))}

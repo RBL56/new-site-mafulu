@@ -657,6 +657,8 @@ footer {
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 .signal-card:hover {
@@ -723,7 +725,30 @@ footer {
     box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
 }
 
-/* Stats Grid */
+/* Signal Reasons */
+.signal-reasons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+    min-height: 24px;
+}
+
+.signal-reason-tag {
+    background: rgba(96, 165, 250, 0.1);
+    color: #60a5fa;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border: 1px solid rgba(96, 165, 250, 0.2);
+}
+
+.signal-entry-points-section {
+    padding: 0 4px;
+    margin-bottom: 2px;
+}
+
 .signal-signals-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -811,34 +836,37 @@ footer {
 .signal-digits-table {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    gap: 6px;
-    margin-bottom: 24px;
+    gap: 4px;
+    margin-bottom: 20px;
+    width: 100%;
 }
 
 .signal-digit-cell {
-    padding: 8px 4px;
+    padding: 6px 2px;
     text-align: center;
     background: rgba(255, 255, 255, 0.03);
     border-radius: 8px;
     font-weight: 700;
-    aspect-ratio: 1;
+    aspect-ratio: 1 / 1;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     border: 1px solid transparent;
     transition: all 0.3s;
+    min-width: 0;
 }
 
 .signal-digit-label {
-    font-size: 0.7rem;
+    font-size: 0.6rem;
     color: #64748b;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
 }
 
 .signal-digit-value {
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     color: #e2e8f0;
+    line-height: 1;
 }
 
 .signal-digit-hot {

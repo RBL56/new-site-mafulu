@@ -422,7 +422,9 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
 
         // Check stop conditions
         const maxTrades = updatedBot.config.maxTrades;
-        if (maxTrades && updatedBot.trades.length >= maxTrades) {
+        const isAutoArena = updatedBot.id.startsWith('auto-arena-');
+
+        if (!isAutoArena && maxTrades && updatedBot.trades.length >= maxTrades) {
           toast({ title: "Trade Limit Reached", description: `Signal Bot for ${updatedBot.name} stopped after ${maxTrades} trades.` });
           updatedBot.status = 'stopped';
         } else if (updatedBot.config.takeProfit && updatedBot.profit >= updatedBot.config.takeProfit) {
@@ -596,67 +598,93 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
 
   // --- Auto Trade for Signal Arena ---
   const autoTradedSymbolsRef = useRef<Set<string>>(new Set());
+  const pendingArenaEntriesRef = useRef<Map<string, { signalType: string, prediction: number, direction: 'over' | 'under', botId: string }>>(new Map());
 
   useEffect(() => {
-    if (!signalBotConfig.autoTrade || !isConnected) return;
+    if (!signalBotConfig.autoTrade || !isConnected) {
+      pendingArenaEntriesRef.current.clear();
+      return;
+    }
 
     Object.keys(analysisData).forEach(symbol => {
       const data = analysisData[symbol];
       if (data && data.strong_signal) {
-        // Only trigger if not already running for this symbol and not recently auto-traded
         const isRunning = signalBotsRef.current.some(b => b.market === symbol && b.status === 'running');
+        const isPending = pendingArenaEntriesRef.current.has(symbol);
 
-        if (!isRunning && !autoTradedSymbolsRef.current.has(symbol)) {
-          console.log(`🤖 Auto Trading triggered for ${symbol}: ${data.strong_signal_type}`);
+        if (!isRunning && !isPending && !autoTradedSymbolsRef.current.has(symbol)) {
+          console.log(`📡 Signal detected for ${symbol}: ${data.strong_signal_type}. Waiting for Entry Point...`);
 
           const direction = data.strong_signal_type.includes('Over') ? 'over' : 'under';
           const prediction = data.strong_signal_type.includes('Over') ? 3 : 6;
 
-          const botConfig: SignalBot = {
-            id: `auto-arena-${symbol}-${Date.now()}`,
-            name: `${data.name}`,
-            market: symbol,
+          pendingArenaEntriesRef.current.set(symbol, {
             signalType: data.strong_signal_type,
-            status: 'running',
-            profit: 0,
-            trades: [],
-            config: {
-              market: symbol,
-              tradeType: 'over_under',
-              predictionType: direction,
-              lastDigitPrediction: prediction,
-              ticks: 1,
-              initialStake: signalBotConfig.initialStake,
-              takeProfit: signalBotConfig.takeProfit,
-              stopLossType: 'consecutive_losses',
-              stopLossConsecutive: signalBotConfig.stopLossConsecutive,
-              useMartingale: signalBotConfig.useMartingale,
-              martingaleFactor: signalBotConfig.martingaleFactor,
-              useBulkTrading: false,
-              useEntryPoint: false,
-              stopLossAmount: 50,
-              bulkTradeCount: 1,
-              entryPointType: 'single',
-              entryRangeStart: 0,
-              entryRangeEnd: 9,
-            }
-          };
-
-          startSignalBot(botConfig, false);
-          autoTradedSymbolsRef.current.add(symbol);
-
-          // Clear from auto-traded set after some time to allow re-triggering for next cycle
-          // e.g., 2 minutes if the bot stops
-          setTimeout(() => {
-            autoTradedSymbolsRef.current.delete(symbol);
-          }, 120000);
+            prediction,
+            direction,
+            botId: `auto-arena-${symbol}-${Date.now()}`
+          });
         }
-      } else if (data && !data.strong_signal) {
-        // If signal is gone, we can potentially remove it from auto-traded set sooner
-        // but better to keep the cooldown to prevent rapid-fire on oscillating signals
       }
     });
-  }, [analysisData, signalBotConfig.autoTrade, isConnected, startSignalBot, signalBotConfig]);
+  }, [analysisData, signalBotConfig.autoTrade, isConnected]);
+
+  // Handle Target Entry Points for Arena Bots
+  useEffect(() => {
+    if (!signalBotConfig.autoTrade || !isConnected || lastDigits.length === 0) return;
+
+    const currentDigit = lastDigits[lastDigits.length - 1];
+
+    pendingArenaEntriesRef.current.forEach((pending, symbol) => {
+      const data = analysisData[symbol];
+      if (!data) return;
+
+      const entryPoints = pending.direction === 'over' ? (data.entry_points_over3 || []) : (data.entry_points_under6 || []);
+
+      if (entryPoints.includes(currentDigit)) {
+        console.log(`🔥 Entry Point ${currentDigit} touched for ${symbol}. Starting Arena Bot.`);
+
+        const botConfig: SignalBot = {
+          id: pending.botId,
+          name: `${data.name}`,
+          market: symbol,
+          signalType: `${pending.signalType} (Entry: ${currentDigit})`,
+          status: 'running',
+          profit: 0,
+          trades: [],
+          config: {
+            market: symbol,
+            tradeType: 'over_under',
+            predictionType: pending.direction,
+            lastDigitPrediction: pending.prediction,
+            ticks: 1,
+            initialStake: signalBotConfig.initialStake,
+            takeProfit: signalBotConfig.takeProfit,
+            stopLossType: 'consecutive_losses',
+            stopLossConsecutive: signalBotConfig.stopLossConsecutive,
+            useMartingale: signalBotConfig.useMartingale,
+            martingaleFactor: signalBotConfig.martingaleFactor,
+            useBulkTrading: false,
+            useEntryPoint: false,
+            stopLossAmount: 50,
+            bulkTradeCount: 1,
+            entryPointType: 'single',
+            entryRangeStart: 0,
+            entryRangeEnd: 9,
+          }
+        };
+
+        startSignalBot(botConfig, false);
+        pendingArenaEntriesRef.current.delete(symbol);
+        autoTradedSymbolsRef.current.add(symbol);
+
+        // Cooldown for this specific bot instance/trigger
+        setTimeout(() => {
+          autoTradedSymbolsRef.current.delete(symbol);
+        }, 120000);
+      }
+    });
+  }, [lastDigits, analysisData, signalBotConfig.autoTrade, isConnected, startSignalBot, signalBotConfig]);
 
   const isBotRunning = (botStatus === 'running' || botStatus === 'waiting') && isRunningRef.current;
 

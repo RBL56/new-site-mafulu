@@ -107,12 +107,12 @@ function BotBuilderContent() {
         <Tabs value={activeTab} className="w-full md:grid md:grid-cols-[250px_1fr] gap-8" onValueChange={handleTabChange}>
           <div className="px-4 md:hidden">
             <ScrollArea className="w-full whitespace-nowrap pb-2">
-              <TabsList className="inline-flex w-full mb-4">
-                <TabsTrigger value="bot-builder" className="py-3 text-base w-full justify-start" onClick={() => handleTabChange('bot-builder')}><Waypoints className="mr-2 h-5 w-5" />Bot Builder</TabsTrigger>
-                <TabsTrigger value="dcircle" className="py-3 text-base w-full justify-start" onClick={() => handleTabChange('dcircle')}><Circle className="mr-2 h-5 w-5" />DCircle</TabsTrigger>
-                <TabsTrigger value="signal-arena" className="py-3 text-base w-full justify-start" onClick={() => handleTabChange('signal-arena')}><Target className="mr-2 h-5 w-5" />Signal Arena</TabsTrigger>
-                <TabsTrigger value="auto-bot" className="py-3 text-base w-full justify-start" onClick={() => handleTabChange('auto-bot')}><Zap className="mr-2 h-5 w-5 text-yellow-500" />Auto Bot</TabsTrigger>
-                <TabsTrigger value="trading-view" className="py-3 text-base w-full justify-start" onClick={() => handleTabChange('trading-view')}><CandlestickChart className="mr-2 h-5 w-5" />TradingView</TabsTrigger>
+              <TabsList className="inline-flex mb-4">
+                <TabsTrigger value="bot-builder" className="py-3 text-base shrink-0 justify-start" onClick={() => handleTabChange('bot-builder')}><Waypoints className="mr-2 h-5 w-5" />Bot Builder</TabsTrigger>
+                <TabsTrigger value="dcircle" className="py-3 text-base shrink-0 justify-start" onClick={() => handleTabChange('dcircle')}><Circle className="mr-2 h-5 w-5" />DCircle</TabsTrigger>
+                <TabsTrigger value="signal-arena" className="py-3 text-base shrink-0 justify-start" onClick={() => handleTabChange('signal-arena')}><Target className="mr-2 h-5 w-5" />Signal Arena</TabsTrigger>
+                <TabsTrigger value="auto-bot" className="py-3 text-base shrink-0 justify-start" onClick={() => handleTabChange('auto-bot')}><Zap className="mr-2 h-5 w-5 text-yellow-500" />Auto Bot</TabsTrigger>
+                <TabsTrigger value="trading-view" className="py-3 text-base shrink-0 justify-start" onClick={() => handleTabChange('trading-view')}><CandlestickChart className="mr-2 h-5 w-5" />TradingView</TabsTrigger>
               </TabsList>
             </ScrollArea>
           </div>

@@ -139,11 +139,34 @@ const SignalCard: React.FC<SignalCardProps> = ({
                 <div className={cn("signal-bias-indicator", biasClass)}>{card.chi_square.interpretation}</div>
             </div>
 
-            {card.reasons && card.reasons.length > 0 && (
-                <div className="signal-reasons">
-                    {card.reasons.map((reason: string) => (
-                        <span key={reason} className="signal-reason-tag">{reason}</span>
-                    ))}
+            {(card.entry_points_over3?.length > 0 || card.entry_points_under6?.length > 0) && (
+                <div className="signal-entry-points-section">
+                    <div className="flex flex-col gap-2 mb-4">
+                        {card.entry_points_over3?.length > 0 && (
+                            <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider">Entry O3:</span>
+                                <div className="flex flex-wrap gap-1">
+                                    {card.entry_points_over3.map((digit: number) => (
+                                        <Badge key={digit} variant="outline" className="text-[10px] px-1.5 py-0 h-4 min-w-[18px] justify-center border-blue-400/30 text-blue-300 bg-blue-400/5">
+                                            {digit}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        {card.entry_points_under6?.length > 0 && (
+                            <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-bold text-teal-400 uppercase tracking-wider">Entry U6:</span>
+                                <div className="flex flex-wrap gap-1">
+                                    {card.entry_points_under6.map((digit: number) => (
+                                        <Badge key={digit} variant="outline" className="text-[10px] px-1.5 py-0 h-4 min-w-[18px] justify-center border-teal-400/30 text-teal-300 bg-teal-400/5">
+                                            {digit}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
 
