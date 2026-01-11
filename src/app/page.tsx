@@ -106,8 +106,8 @@ function BotBuilderContent() {
       {isConnected ? (
         <Tabs value={activeTab} className="w-full md:grid md:grid-cols-[250px_1fr] gap-8" onValueChange={handleTabChange}>
           <div className="px-4 md:hidden">
-            <ScrollArea className="w-full whitespace-nowrap pb-2">
-              <TabsList className="inline-flex mb-4">
+            <ScrollArea className="w-full" orientation="horizontal">
+              <TabsList className="inline-flex mb-4 gap-2">
                 <TabsTrigger value="bot-builder" className="py-3 text-base shrink-0 justify-start" onClick={() => handleTabChange('bot-builder')}><Waypoints className="mr-2 h-5 w-5" />Bot Builder</TabsTrigger>
                 <TabsTrigger value="dcircle" className="py-3 text-base shrink-0 justify-start" onClick={() => handleTabChange('dcircle')}><Circle className="mr-2 h-5 w-5" />DCircle</TabsTrigger>
                 <TabsTrigger value="signal-arena" className="py-3 text-base shrink-0 justify-start" onClick={() => handleTabChange('signal-arena')}><Target className="mr-2 h-5 w-5" />Signal Arena</TabsTrigger>
