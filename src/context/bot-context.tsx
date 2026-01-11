@@ -453,6 +453,104 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
         // Update state
         setSignalBots(prev => prev.map(b => b.id === updatedBot.id ? updatedBot : b));
 
+        // Recovery Logic for Arena Auto-Bots
+        if (isAutoArena && !isWin && !updatedBot.id.includes('recovery')) {
+          // Get last 5 digits
+          const last5Digits = lastDigits.slice(-5);
+
+          if (last5Digits.length === 5) {
+            let shouldRecover = false;
+            let recoveryType: 'over' | 'under' = 'over';
+            let recoveryPrediction = 4;
+            let recoveryReason = '';
+
+            // Check if original trade was Over 3
+            if (updatedBot.config.predictionType === 'over' && updatedBot.config.lastDigitPrediction === 3) {
+              // All last 5 digits >= 5?
+              const allHighDigits = last5Digits.every(d => d >= 5);
+              if (allHighDigits) {
+                shouldRecover = true;
+                recoveryType = 'under';
+                recoveryPrediction = 5;
+                recoveryReason = 'Over 3 loss + last 5 digits ≥5 → Under 5 recovery';
+              }
+            }
+            // Check if original trade was Under 6
+            else if (updatedBot.config.predictionType === 'under' && updatedBot.config.lastDigitPrediction === 6) {
+              // All last 5 digits <= 4?
+              const allLowDigits = last5Digits.every(d => d <= 4);
+              if (allLowDigits) {
+                shouldRecover = true;
+                recoveryType = 'over';
+                recoveryPrediction = 4;
+                recoveryReason = 'Under 6 loss + last 5 digits ≤4 → Over 4 recovery';
+              }
+            }
+
+            if (shouldRecover) {
+              console.log(`🔄 Recovery trade triggered: ${recoveryReason}`);
+
+              // PAUSE the original bot - it must wait for recovery to succeed
+              updatedBot.status = 'stopped';
+              setSignalBots(prev => prev.map(b => b.id === updatedBot.id ? updatedBot : b));
+
+              const recoveryBot: SignalBot = {
+                id: `auto-arena-recovery-${updatedBot.config.market}-${Date.now()}`,
+                name: `${updatedBot.name} (Recovery)`,
+                market: updatedBot.config.market,
+                signalType: `Recovery: ${recoveryType === 'over' ? 'Over' : 'Under'} ${recoveryPrediction}`,
+                status: 'running',
+                profit: 0,
+                trades: [],
+                parentBotId: updatedBot.id, // Link to original bot
+                config: {
+                  ...updatedBot.config,
+                  predictionType: recoveryType,
+                  lastDigitPrediction: recoveryPrediction,
+                }
+              };
+
+              startSignalBot(recoveryBot, false);
+              toast({
+                title: "Recovery Trade Activated",
+                description: recoveryReason + " - Original bot paused until recovery succeeds",
+                duration: 5000
+              });
+
+              // Don't continue trading - wait for recovery
+              return;
+            }
+          }
+        }
+
+        // Handle recovery trade completion
+        if (updatedBot.id.includes('recovery') && updatedBot.parentBotId) {
+          if (isWin) {
+            // Recovery succeeded - resume parent bot
+            console.log(`✅ Recovery successful! Resuming parent bot: ${updatedBot.parentBotId}`);
+            setSignalBots(prev => prev.map(b => {
+              if (b.id === updatedBot.parentBotId) {
+                return { ...b, status: 'running' };
+              }
+              return b;
+            }));
+            toast({
+              title: "Recovery Successful!",
+              description: "Original bot has been resumed and will continue trading.",
+              duration: 5000
+            });
+          } else {
+            // Recovery failed - keep parent bot stopped
+            console.log(`❌ Recovery failed. Parent bot remains stopped: ${updatedBot.parentBotId}`);
+            toast({
+              title: "Recovery Failed",
+              description: "Original bot remains stopped. Manual intervention may be required.",
+              duration: 5000,
+              variant: "destructive"
+            });
+          }
+        }
+
         // Attempt next trade if still running
         if (updatedBot.status === 'running') {
           purchaseContract('signal', updatedBot.config, nextStake, updatedBot.id);
@@ -610,6 +708,13 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
       }
     }
   }, [lastDigits, purchaseContract, digitStatus, disconnectDigit]);
+
+  // Suppress signal alert popup when auto-trade is enabled
+  useEffect(() => {
+    if (signalBotConfig.autoTrade && signalAlert) {
+      setSignalAlert(null);
+    }
+  }, [signalBotConfig.autoTrade, signalAlert, setSignalAlert]);
 
   // --- Auto Trade for Signal Arena ---
   const autoTradedSymbolsRef = useRef<Set<string>>(new Set());

@@ -30,5 +30,6 @@ export interface SignalBot {
     config: BotConfigurationValues;
     consecutiveLosses?: number;
     trades: Trade[];
+    parentBotId?: string; // For recovery trades - links to the original bot
 }
 
