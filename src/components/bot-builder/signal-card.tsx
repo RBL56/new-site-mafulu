@@ -42,13 +42,24 @@ const SignalCard: React.FC<SignalCardProps> = ({
         return '';
     };
 
-    const overPercentage = card.percentages.over_3 || 0;
-    const underPercentage = card.percentages.under_6 || 0;
     const isRunning = signalBots.some(b => b.market === card.symbol && b.status === 'running');
 
+    // Use 1000-tick Auto Bot data if available, otherwise use 500-tick card data
+    const activeData = autoBotData || card;
+    const activePercentages = activeData.percentages || {};
+    const activeTicks = activeData.ticks_analyzed || card.ticks_analyzed;
+
+    // Helper to get digit percentage regardless of key format ('digit_0' or '0')
+    const getDigitPct = (digit: number) => {
+        return activePercentages[`digit_${digit}`] ?? activePercentages[digit] ?? 0;
+    };
+
+    const overPercentage = activePercentages.over_3 || 0;
+    const underPercentage = activePercentages.under_6 || 0;
+
     // Strategy-specific calculations
-    const sum02 = (card.percentages.digit_0 || 0) + (card.percentages.digit_1 || 0) + (card.percentages.digit_2 || 0);
-    const sum79 = (card.percentages.digit_7 || 0) + (card.percentages.digit_8 || 0) + (card.percentages.digit_9 || 0);
+    const sum02 = getDigitPct(0) + getDigitPct(1) + getDigitPct(2);
+    const sum79 = getDigitPct(7) + getDigitPct(8) + getDigitPct(9);
 
     return (
         <div className={cn("signal-card", isRunning && "border-primary/50 shadow-md shadow-primary/10")}>
@@ -97,28 +108,28 @@ const SignalCard: React.FC<SignalCardProps> = ({
                     <>
                         <div className="signal-signal-item">
                             <div className="signal-signal-label">Over 3</div>
-                            <div className={cn("signal-signal-value", getSignalClass(card.percentages.over_3, 'over_under'))}>
-                                {card.percentages.over_3.toFixed(1)}%
+                            <div className={cn("signal-signal-value", getSignalClass(overPercentage, 'over_under'))}>
+                                {overPercentage.toFixed(1)}%
                             </div>
                         </div>
                         <div className="signal-signal-item">
                             <div className="signal-signal-label">Under 6</div>
-                            <div className={cn("signal-signal-value", getSignalClass(card.percentages.under_6, 'over_under'))}>
-                                {card.percentages.under_6.toFixed(1)}%
+                            <div className={cn("signal-signal-value", getSignalClass(underPercentage, 'over_under'))}>
+                                {underPercentage.toFixed(1)}%
                             </div>
                         </div>
                     </>
                 )}
                 <div className="signal-signal-item">
                     <div className="signal-signal-label">Even</div>
-                    <div className={cn("signal-signal-value", getSignalClass(card.percentages.even, 'even_odd'))}>
-                        {card.percentages.even.toFixed(1)}%
+                    <div className={cn("signal-signal-value", getSignalClass(activePercentages.even || 0, 'even_odd'))}>
+                        {(activePercentages.even || 0).toFixed(1)}%
                     </div>
                 </div>
                 <div className="signal-signal-item">
                     <div className="signal-signal-label">Odd</div>
-                    <div className={cn("signal-signal-value", getSignalClass(card.percentages.odd, 'even_odd'))}>
-                        {card.percentages.odd.toFixed(1)}%
+                    <div className={cn("signal-signal-value", getSignalClass(activePercentages.odd || 0, 'even_odd'))}>
+                        {(activePercentages.odd || 0).toFixed(1)}%
                     </div>
                 </div>
             </div>
@@ -137,12 +148,15 @@ const SignalCard: React.FC<SignalCardProps> = ({
             )}
 
             <div className="signal-digits-table">
-                {Array.from({ length: 10 }).map((_, i) => (
-                    <div key={i} className={cn("signal-digit-cell", getDigitClass(card.percentages[`digit_${i}`]), i === 0 ? 'digit-zero' : '')}>
-                        <div className="signal-digit-label">{i}</div>
-                        <div className="signal-digit-value">{card.percentages[`digit_${i}`].toFixed(1)}%</div>
-                    </div>
-                ))}
+                {Array.from({ length: 10 }).map((_, i) => {
+                    const pct = getDigitPct(i);
+                    return (
+                        <div key={i} className={cn("signal-digit-cell", getDigitClass(pct), i === 0 ? 'digit-zero' : '')}>
+                            <div className="signal-digit-label">{i}</div>
+                            <div className="signal-digit-value">{pct.toFixed(1)}%</div>
+                        </div>
+                    );
+                })}
             </div>
 
             <div className="signal-card-footer">
@@ -164,7 +178,7 @@ const SignalCard: React.FC<SignalCardProps> = ({
             </div>
             <div className="flex justify-between items-center px-3 pb-2 text-[10px] text-muted-foreground">
                 <div className="signal-update-time">Updated: {new Date(card.update_time).toLocaleTimeString()}</div>
-                <div>Ticks: {card.ticks_analyzed}</div>
+                <div>Ticks: {activeTicks}</div>
             </div>
         </div>
     );

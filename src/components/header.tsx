@@ -26,7 +26,7 @@ export default function Header() {
   const { isConnected } = useDerivApi();
 
   const handleLoginRedirect = () => {
-    const redirectUri = "https://mafurumbanya.netlify.app/";
+    const redirectUri = "https://new-site-mafulu.vercel.app/";
     if (!DERIV_APP_ID) {
       alert('Deriv App ID is not configured.');
       return;

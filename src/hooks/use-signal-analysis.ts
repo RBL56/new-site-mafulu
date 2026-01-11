@@ -66,7 +66,7 @@ const chiSquareTest = (observed: number[]) => {
 
 const analyzeDigits = (digits: number[], symbol: string, name: string) => {
     const total = digits.length;
-    if (total < 100) return null;
+    if (total < 500) return null;
 
     const counts = Array(10).fill(0);
     digits.forEach(digit => {
@@ -232,9 +232,10 @@ export const useSignalAnalysis = () => {
         Object.keys(tickDataRef.current).forEach(symbol => {
             const digits = tickDataRef.current[symbol];
 
-            // Standard Signal Analysis
-            if (digits && digits.length >= 100) {
-                const result = analyzeDigits(digits, symbol, SYMBOL_CONFIG[symbol]?.name || symbol);
+            // Standard Signal Analysis (500 ticks)
+            if (digits && digits.length >= 500) {
+                const arenaDigits = digits.slice(-500);
+                const result = analyzeDigits(arenaDigits, symbol, SYMBOL_CONFIG[symbol]?.name || symbol);
                 if (result) {
                     const previousResult = analysisDataRef.current[symbol];
                     if (result.strong_signal && (!previousResult || !previousResult.strong_signal)) {

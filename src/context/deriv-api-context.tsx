@@ -40,6 +40,7 @@ interface DerivApiContextType {
   api: WebSocket | null;
   subscribeToMessages: (handler: (data: any) => void) => () => void;
   marketConfig: { [key: string]: { decimals: number } };
+  resetBalance: () => Promise<void>;
 }
 
 const DerivApiContext = createContext<DerivApiContextType | undefined>(undefined);
@@ -243,6 +244,40 @@ export const DerivApiProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [connectAndAuthorize, toast]);
 
+  const resetBalance = useCallback(async () => {
+    if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
+      toast({
+        variant: "destructive",
+        title: "Connection Error",
+        description: "WebSocket is not connected.",
+      });
+      return;
+    }
+
+    if (!activeAccount?.is_virtual) {
+      toast({
+        variant: "destructive",
+        title: "Action Not Allowed",
+        description: "Balance reset is only available for demo accounts.",
+      });
+      return;
+    }
+
+    try {
+      ws.current.send(JSON.stringify({ topup_virtual: 1 }));
+      toast({
+        title: "Balance Reset",
+        description: "Your demo balance has been reset to its initial value.",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Reset Failed",
+        description: error.message || "Could not reset balance.",
+      });
+    }
+  }, [activeAccount, toast]);
+
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -321,7 +356,8 @@ export const DerivApiProvider = ({ children }: { children: ReactNode }) => {
       switchAccount,
       api: ws.current,
       subscribeToMessages,
-      marketConfig
+      marketConfig,
+      resetBalance
     }}>
       {children}
     </DerivApiContext.Provider>
