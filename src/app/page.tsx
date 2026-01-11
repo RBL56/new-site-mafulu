@@ -3,7 +3,7 @@
 
 import { useDerivApi } from '@/context/deriv-api-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShieldAlert, Bot, Signal, CandlestickChart, Circle, Waypoints, Target, Zap } from 'lucide-react';
+import { ShieldAlert, Bot, Signal, CandlestickChart, Circle, Waypoints, Target, Zap, TrendingUp, TrendingDown } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,6 +41,8 @@ function BotBuilderContent() {
     tradeLogRef,
     signalAlert,
     setSignalAlert,
+    tpSlNotification,
+    setTpSlNotification,
     startSignalBot
   } = useBot();
 
@@ -225,6 +227,48 @@ function BotBuilderContent() {
             <AlertDialogAction onClick={handleStartBotFromAlert}>
               <Bot className="mr-2 h-4 w-4" /> Start Bot
             </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* TP/SL Notification */}
+      <AlertDialog open={!!tpSlNotification} onOpenChange={() => setTpSlNotification(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              {tpSlNotification?.type === 'tp' ? (
+                <>
+                  <TrendingUp className="text-green-500" />
+                  Take-Profit Hit! 🎉
+                </>
+              ) : (
+                <>
+                  <TrendingDown className="text-red-500" />
+                  Stop-Loss Hit
+                </>
+              )}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {tpSlNotification?.type === 'tp'
+                ? 'Congratulations! Your SpeedBot has reached the take-profit target.'
+                : 'Your SpeedBot has hit the stop-loss limit and has been stopped.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="my-4">
+            <p className="text-sm text-muted-foreground">Final Profit/Loss:</p>
+            <p className={cn(
+              "text-3xl font-bold font-mono",
+              tpSlNotification?.type === 'tp' ? 'text-green-500' : 'text-red-500'
+            )}>
+              {new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                signDisplay: 'always',
+              }).format(tpSlNotification?.profit || 0)}
+            </p>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setTpSlNotification(null)}>OK</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

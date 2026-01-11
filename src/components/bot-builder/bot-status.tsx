@@ -2,12 +2,13 @@
 
 import { useBot } from '@/context/bot-context';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, BadgeDollarSign, TrendingUp, TrendingDown, Target, HelpCircle, Hourglass } from 'lucide-react';
+import { BarChart, BadgeDollarSign, TrendingUp, TrendingDown, Target, HelpCircle, Hourglass, Volume2, VolumeX } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '../ui/skeleton';
+import { Button } from '../ui/button';
 
 export default function BotStatus() {
-  const { totalProfit, totalStake, totalRuns, totalWins, totalLosses, isBotRunning, botStatus } = useBot();
+  const { totalProfit, totalStake, totalRuns, totalWins, totalLosses, isBotRunning, botStatus, soundEnabled, setSoundEnabled } = useBot();
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -51,57 +52,68 @@ export default function BotStatus() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline flex items-center gap-2">
-          <BarChart className="h-6 w-6" />
-          Bot Status
+        <CardTitle className="font-headline flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <BarChart className="h-6 w-6" />
+            Bot Status
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSoundEnabled(!soundEnabled)}
+            className="h-8 w-8 p-0"
+            title={soundEnabled ? "Mute sounds" : "Unmute sounds"}
+          >
+            {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4 text-muted-foreground" />}
+          </Button>
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <StatusItem 
-            icon={BadgeDollarSign} 
-            label="Total Profit" 
+          <StatusItem
+            icon={BadgeDollarSign}
+            label="Total Profit"
             value={totalProfit}
             color={getProfitColor(totalProfit)}
             isCurrency
           />
-          <StatusItem 
-            icon={Target} 
-            label="Total Stake" 
+          <StatusItem
+            icon={Target}
+            label="Total Stake"
             value={totalStake}
             color="text-foreground"
             isCurrency
           />
-          <StatusItem 
-            icon={HelpCircle} 
-            label="Total Runs" 
+          <StatusItem
+            icon={HelpCircle}
+            label="Total Runs"
             value={totalRuns}
             color="text-foreground"
           />
-          <StatusItem 
-            icon={TrendingUp} 
-            label="Wins" 
+          <StatusItem
+            icon={TrendingUp}
+            label="Wins"
             value={totalWins}
             color="text-green-500"
           />
-          <StatusItem 
-            icon={TrendingDown} 
-            label="Losses" 
+          <StatusItem
+            icon={TrendingDown}
+            label="Losses"
             value={totalLosses}
             color="text-red-500"
           />
-           <div className="flex flex-col gap-1 rounded-lg bg-background p-4">
-                <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                    {getStatusIcon()}
-                    Status
-                </p>
-                <p className={cn(
-                    "text-2xl font-bold font-mono",
-                    getStatusColor()
-                )}>
-                    {getStatusText()}
-                </p>
-            </div>
+          <div className="flex flex-col gap-1 rounded-lg bg-background p-4">
+            <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              {getStatusIcon()}
+              Status
+            </p>
+            <p className={cn(
+              "text-2xl font-bold font-mono",
+              getStatusColor()
+            )}>
+              {getStatusText()}
+            </p>
+          </div>
         </div>
       </CardContent>
     </Card>

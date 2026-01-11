@@ -51,11 +51,19 @@ interface BotContextType {
   signalAlert: any | null;
   setSignalAlert: (alert: any | null) => void;
   lastUpdateTime: string;
+
+  // Sound & Notifications
+  soundEnabled: boolean;
+  setSoundEnabled: (enabled: boolean) => void;
+  tpSlNotification: { type: 'tp' | 'sl', profit: number } | null;
+  setTpSlNotification: (notification: { type: 'tp' | 'sl', profit: number } | null) => void;
 }
 
 const BotContext = createContext<BotContextType | undefined>(undefined);
 
-const playSound = (type: 'tp' | 'sl') => {
+const playSound = (type: 'tp' | 'sl', soundEnabled: boolean) => {
+  if (!soundEnabled) return;
+
   try {
     const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
     const oscillator = audioContext.createOscillator();
@@ -118,6 +126,10 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
   // UI State
   const [activeTab, setActiveTab] = useState('bot-builder');
   const [activeBuilderTab, setActiveBuilderTab] = useState('speedbot');
+
+  // Sound & Notifications
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [tpSlNotification, setTpSlNotification] = useState<{ type: 'tp' | 'sl', profit: number } | null>(null);
 
   const configRef = useRef<BotConfigurationValues | null>(null);
   const currentStakeRef = useRef<number>(0);
@@ -352,14 +364,17 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
           toast({ title: "Take-Profit Hit", description: "SpeedBot stopped due to take-profit limit." });
           shouldStop = true;
           stopReason = 'tp';
+          setTpSlNotification({ type: 'tp', profit: totalProfitRef.current });
         } else if (config?.stopLossType === 'amount' && config.stopLossAmount && totalProfitRef.current <= -config.stopLossAmount) {
           toast({ title: "Stop-Loss Hit", description: "SpeedBot stopped due to stop-loss amount limit." });
           shouldStop = true;
           stopReason = 'sl';
+          setTpSlNotification({ type: 'sl', profit: totalProfitRef.current });
         } else if (config?.stopLossType === 'consecutive_losses' && config.stopLossConsecutive && consecutiveLossesRef.current >= config.stopLossConsecutive) {
           toast({ title: "Stop-Loss Hit", description: `SpeedBot stopped after ${config.stopLossConsecutive} consecutive losses.` });
           shouldStop = true;
           stopReason = 'sl';
+          setTpSlNotification({ type: 'sl', profit: totalProfitRef.current });
         } else if (config?.useBulkTrading && bulkTradesCompletedRef.current >= (config.bulkTradeCount || 1)) {
           if ([...openContractsRef.current.values()].filter(c => c.botType === 'speed').length === 0) {
             toast({ title: 'Bulk Trades Complete', description: `Finished ${config.bulkTradeCount} trades.` });
@@ -368,7 +383,7 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
         }
 
         if (shouldStop) {
-          if (stopReason) playSound(stopReason);
+          if (stopReason) playSound(stopReason, soundEnabled);
           stopBot(false);
           return;
         }
@@ -719,6 +734,10 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
       signalAlert,
       setSignalAlert,
       lastUpdateTime,
+      soundEnabled,
+      setSoundEnabled,
+      tpSlNotification,
+      setTpSlNotification,
     }}>
       {children}
     </BotContext.Provider>
