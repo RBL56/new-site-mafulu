@@ -18,6 +18,8 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from '../ui/badge';
+import { Switch } from '../ui/switch';
+import { Volume2, VolumeX, Bell, BellOff, Info } from 'lucide-react';
 import type { SignalBot } from '@/lib/types';
 import SignalBotConfigPanel from './signal-bot-config-panel';
 import AutoTradePanel from './auto-trade-panel';
@@ -37,7 +39,11 @@ const SignalArena = () => {
         analysisData,
         signalAlert,
         setSignalAlert,
-        lastUpdateTime
+        lastUpdateTime,
+        soundEnabled,
+        setSoundEnabled,
+        notificationEnabled,
+        setNotificationEnabled
     } = useBot();
 
     const [displayedCards, setDisplayedCards] = useState<any[]>([]);
@@ -192,11 +198,28 @@ const SignalArena = () => {
             <div className="signal-center-container">
                 <div className="signal-center-header">
                     <h1><span>🎯</span> LOCO SIGNAL CENTER</h1>
-                    <div className="signal-status-bar">
-                        <div className={cn("signal-status-dot", { 'connected': isConnected })}></div>
-                        <span>{isConnected ? 'Connected' : 'Disconnected'}</span>
+                    <div className="flex flex-col items-end gap-3">
+                        <div className="flex items-center gap-6">
+                            <div className="flex items-center gap-2 text-sm font-medium text-slate-300">
+                                <div className={cn("signal-status-dot", { 'connected': isConnected })}></div>
+                                <span>{isConnected ? 'Connected' : 'Disconnected'}</span>
+                            </div>
+                            <span className="text-xs text-muted-foreground">Last Update: {lastUpdateTime}</span>
+                        </div>
+
+                        <div className="flex items-center gap-4 bg-muted/20 px-4 py-1.5 rounded-full border border-primary/20 backdrop-blur-md">
+                            <div className="flex items-center gap-2">
+                                {soundEnabled ? <Volume2 className="h-3.5 w-3.5 text-green-500" /> : <VolumeX className="h-3.5 w-3.5 text-muted-foreground" />}
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Sound AI</span>
+                                <Switch checked={soundEnabled} onCheckedChange={setSoundEnabled} className="scale-75 origin-right" />
+                            </div>
+                            <div className="flex items-center gap-2 border-l border-primary/10 pl-4">
+                                {notificationEnabled ? <Bell className="h-3.5 w-3.5 text-primary" /> : <BellOff className="h-3.5 w-3.5 text-muted-foreground" />}
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Popups</span>
+                                <Switch checked={notificationEnabled} onCheckedChange={setNotificationEnabled} className="scale-75 origin-right" />
+                            </div>
+                        </div>
                     </div>
-                    <span>Last Update: {lastUpdateTime}</span>
                 </div>
                 <SignalBotConfigPanel />
                 <div className="signal-filters">
@@ -211,6 +234,45 @@ const SignalArena = () => {
                     <AutoTradePanel type="arena" />
                 </div>
             </div>
+
+            <AlertDialog open={!!signalAlert} onOpenChange={(open) => !open && setSignalAlert(null)}>
+                <AlertDialogContent className="border-primary/50 bg-background/95 backdrop-blur-xl">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="flex items-center gap-2 text-2xl font-headline text-primary">
+                            <Zap className="h-6 w-6 fill-primary" />
+                            STRONG SIGNAL DETECTED
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="space-y-4">
+                            <div className="bg-muted/50 p-4 rounded-xl border border-primary/20 space-y-2">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-sm font-medium">Market:</span>
+                                    <span className="font-bold text-foreground">{signalAlert?.name}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-sm font-medium">Signal:</span>
+                                    <Badge variant="default" className="bg-blue-500">{signalAlert?.strong_signal_type}</Badge>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-sm font-medium">Confidence:</span>
+                                    <span className="font-bold text-green-500">{signalAlert?.confidence}%</span>
+                                </div>
+                            </div>
+                            <p className="text-center text-sm text-muted-foreground italic">
+                                Would you like to launch the Signal Bot for this target?
+                            </p>
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="gap-2">
+                        <AlertDialogCancel className="rounded-full">Ignore</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleStartBotFromAlert}
+                            className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full font-bold px-8"
+                        >
+                            Launch Signal Bot 🚀
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 };

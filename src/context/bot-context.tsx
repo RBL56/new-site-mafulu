@@ -33,11 +33,19 @@ interface BotContextType {
 
   // SignalBot
   signalBots: SignalBot[];
-  startSignalBot: (config: SignalBot) => void;
+  startSignalBot: (config: SignalBot, switchTab?: boolean) => void;
   stopSignalBot: (id: string) => void;
   signalBotConfig: SignalBotConfigurationValues;
   setSignalBotConfig: React.Dispatch<React.SetStateAction<SignalBotConfigurationValues>>;
   resetSignalBots: () => void;
+  resetAutoBots: () => void;
+  stopAllAutoBots: () => void;
+
+  // Recovery States
+  arenaRecoveryState: { [key: string]: 'over3_loss' | 'under6_loss' | null };
+  setArenaRecoveryState: React.Dispatch<React.SetStateAction<{ [key: string]: 'over3_loss' | 'under6_loss' | null }>>;
+  controlCenterRecoveryState: { [key: string]: 'over1' | 'under8' | 'over3_loss' | 'under6_loss' | null };
+  setControlCenterRecoveryState: React.Dispatch<React.SetStateAction<{ [key: string]: 'over1' | 'under8' | 'over3_loss' | 'under6_loss' | null }>>;
 
   // Tabs
   activeTab: string;
@@ -55,6 +63,8 @@ interface BotContextType {
   // Sound & Notifications
   soundEnabled: boolean;
   setSoundEnabled: (enabled: boolean) => void;
+  notificationEnabled: boolean;
+  setNotificationEnabled: (enabled: boolean) => void;
   tpSlNotification: { type: 'tp' | 'sl', profit: number } | null;
   setTpSlNotification: (notification: { type: 'tp' | 'sl', profit: number } | null) => void;
 }
@@ -98,7 +108,6 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
   const { api, subscribeToMessages, isConnected, marketConfig } = useDerivApi();
   const { toast } = useToast();
   const { lastDigits, connect: connectDigit, disconnect: disconnectDigit, status: digitStatus } = useDigitAnalysis();
-  const { analysisData, autoBotData, signalAlert, setSignalAlert, lastUpdateTime } = useSignalAnalysis();
 
   // SpeedBot state
   const [trades, setTrades] = useState<Trade[]>([]);
@@ -119,8 +128,9 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
     useMartingale: true,
     martingaleFactor: 2.1,
     autoTrade: false,
-    maxTrades: 3,
   });
+  const [arenaRecoveryState, setArenaRecoveryState] = useState<{ [key: string]: 'over3_loss' | 'under6_loss' | null }>({});
+  const [controlCenterRecoveryState, setControlCenterRecoveryState] = useState<{ [key: string]: 'over1' | 'under8' | 'over3_loss' | 'under6_loss' | null }>({});
   const signalBotsRef = useRef<SignalBot[]>([]);
 
   // UI State
@@ -129,6 +139,8 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
 
   // Sound & Notifications
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [notificationEnabled, setNotificationEnabled] = useState(false);
+  const { analysisData, autoBotData, signalAlert, setSignalAlert, lastUpdateTime } = useSignalAnalysis(soundEnabled, notificationEnabled);
   const [tpSlNotification, setTpSlNotification] = useState<{ type: 'tp' | 'sl', profit: number } | null>(null);
 
   const configRef = useRef<BotConfigurationValues | null>(null);
@@ -439,10 +451,7 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
         const maxTrades = updatedBot.config.maxTrades;
         const isAutoArena = updatedBot.id.startsWith('auto-arena-');
 
-        if (!isAutoArena && maxTrades && updatedBot.trades.length >= maxTrades) {
-          toast({ title: "Trade Limit Reached", description: `Signal Bot for ${updatedBot.name} stopped after ${maxTrades} trades.` });
-          updatedBot.status = 'stopped';
-        } else if (updatedBot.config.takeProfit && updatedBot.profit >= updatedBot.config.takeProfit) {
+        if (updatedBot.config.takeProfit && updatedBot.profit >= updatedBot.config.takeProfit) {
           toast({ title: "Take-Profit Hit", description: `Signal Bot for ${updatedBot.name} stopped.` });
           updatedBot.status = 'stopped';
         } else if (updatedBot.config.stopLossType === 'consecutive_losses' && updatedBot.config.stopLossConsecutive && consecutiveLosses >= updatedBot.config.stopLossConsecutive) {
@@ -455,72 +464,20 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
 
         // Recovery Logic for Arena Auto-Bots
         if (isAutoArena && !isWin && !updatedBot.id.includes('recovery')) {
-          // Get last 5 digits
-          const last5Digits = lastDigits.slice(-5);
+          const symbol = updatedBot.config.market;
+          console.log(`⚠️ Arena Bot Loss detected for ${symbol}. Entering Recovery Wait Mode.`);
 
-          if (last5Digits.length === 5) {
-            let shouldRecover = false;
-            let recoveryType: 'over' | 'under' = 'over';
-            let recoveryPrediction = 4;
-            let recoveryReason = '';
+          updatedBot.status = 'stopped'; // Stop the loser
+          setSignalBots(prev => prev.map(b => b.id === updatedBot.id ? updatedBot : b));
 
-            // Check if original trade was Over 3
-            if (updatedBot.config.predictionType === 'over' && updatedBot.config.lastDigitPrediction === 3) {
-              // All last 5 digits >= 5?
-              const allHighDigits = last5Digits.every(d => d >= 5);
-              if (allHighDigits) {
-                shouldRecover = true;
-                recoveryType = 'under';
-                recoveryPrediction = 5;
-                recoveryReason = 'Over 3 loss + last 5 digits ≥5 → Under 5 recovery';
-              }
-            }
-            // Check if original trade was Under 6
-            else if (updatedBot.config.predictionType === 'under' && updatedBot.config.lastDigitPrediction === 6) {
-              // All last 5 digits <= 4?
-              const allLowDigits = last5Digits.every(d => d <= 4);
-              if (allLowDigits) {
-                shouldRecover = true;
-                recoveryType = 'over';
-                recoveryPrediction = 4;
-                recoveryReason = 'Under 6 loss + last 5 digits ≤4 → Over 4 recovery';
-              }
-            }
-
-            if (shouldRecover) {
-              console.log(`🔄 Recovery trade triggered: ${recoveryReason}`);
-
-              // PAUSE the original bot - it must wait for recovery to succeed
-              updatedBot.status = 'stopped';
-              setSignalBots(prev => prev.map(b => b.id === updatedBot.id ? updatedBot : b));
-
-              const recoveryBot: SignalBot = {
-                id: `auto-arena-recovery-${updatedBot.config.market}-${Date.now()}`,
-                name: `${updatedBot.name} (Recovery)`,
-                market: updatedBot.config.market,
-                signalType: `Recovery: ${recoveryType === 'over' ? 'Over' : 'Under'} ${recoveryPrediction}`,
-                status: 'running',
-                profit: 0,
-                trades: [],
-                parentBotId: updatedBot.id, // Link to original bot
-                config: {
-                  ...updatedBot.config,
-                  predictionType: recoveryType,
-                  lastDigitPrediction: recoveryPrediction,
-                }
-              };
-
-              startSignalBot(recoveryBot, false);
-              toast({
-                title: "Recovery Trade Activated",
-                description: recoveryReason + " - Original bot paused until recovery succeeds",
-                duration: 5000
-              });
-
-              // Don't continue trading - wait for recovery
-              return;
-            }
+          if (updatedBot.config.predictionType === 'over' && updatedBot.config.lastDigitPrediction === 3) {
+            setArenaRecoveryState(prev => ({ ...prev, [symbol]: 'over3_loss' }));
+            toast({ title: "Recovery Mode: Over 3 Loss", description: "Waiting for 5 low digits to recover..." });
+          } else if (updatedBot.config.predictionType === 'under' && updatedBot.config.lastDigitPrediction === 6) {
+            setArenaRecoveryState(prev => ({ ...prev, [symbol]: 'under6_loss' }));
+            toast({ title: "Recovery Mode: Under 6 Loss", description: "Waiting for 5 high digits to recover..." });
           }
+          return;
         }
 
         // Handle recovery trade completion
@@ -626,9 +583,17 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
       stopLossConsecutive: signalBotConfig.stopLossConsecutive,
       useMartingale: signalBotConfig.useMartingale,
       martingaleFactor: signalBotConfig.martingaleFactor,
-      maxTrades: signalBotConfig.maxTrades,
       useBulkTrading: false, // Ensure bulky trading is disabled
     };
+
+    // CRITICAL for Auto Bots:
+    // Entry bots (Over 1, Under 8, Strong Over 3 etc) must STOP on first loss to trigger Recovery Logic.
+    // They should NOT use Martingale immediately.
+    // Recovery bots (containing 'recovery' in ID) SHOULD use Global Config (Martingale allowed).
+    if (newBot.id.startsWith('auto-') && !newBot.id.includes('recovery')) {
+      finalConfig.useMartingale = false;
+      finalConfig.stopLossConsecutive = 1;
+    }
 
     const botToStart: SignalBot = { ...newBot, config: finalConfig, trades: [] };
 
@@ -647,6 +612,154 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [purchaseContract, setActiveTab, setActiveBuilderTab, signalBotConfig]);
 
+  // =========================================================================================
+  // AUTO-TRADE ARENA LOGIC
+  // =========================================================================================
+  useEffect(() => {
+    // We run this effect on every analysis update to check for:
+    // 1. Recovery Opportunities (Priority, runs even if Auto Trade is OFF)
+    // 2. New Entry Opportunities (Only if Auto Trade is ON)
+
+    Object.values(analysisData).forEach((data: any) => {
+      if (!data || !data.symbol) return;
+      const symbol = data.symbol;
+
+      const lastDigit = data.lastDigit;
+      // Get last 5 digits for recovery check
+      const last5Digits = data.last5Digits || [];
+      const isLast5Low = last5Digits.length === 5 && last5Digits.every((d: number) => d <= 4);
+      const isLast5High = last5Digits.length === 5 && last5Digits.every((d: number) => d >= 5);
+
+      // --- 1. RECOVERY CHECK (Priority) ---
+      if (arenaRecoveryState[symbol]) {
+        const mode = arenaRecoveryState[symbol];
+        let recoveryTrigger = false;
+        let recoveryPrediction = 0;
+        let recoveryType: 'over' | 'under' = 'over';
+        let recoveryName = '';
+
+        // Over 3 Loss -> Wait for 5 Low -> Trade Over 4
+        if (mode === 'over3_loss' && isLast5Low) {
+          recoveryTrigger = true;
+          recoveryPrediction = 4;
+          recoveryType = 'over';
+          recoveryName = 'Recovery Over 4 (Arena)';
+        }
+        // Under 6 Loss -> Wait for 5 High -> Trade Under 5
+        else if (mode === 'under6_loss' && isLast5High) {
+          recoveryTrigger = true;
+          recoveryPrediction = 5;
+          recoveryType = 'under';
+          recoveryName = 'Recovery Under 5 (Arena)';
+        }
+
+        if (recoveryTrigger) {
+          console.log(`🚑 Executing Recovery: ${symbol} - ${recoveryName}`);
+          setArenaRecoveryState(prev => ({ ...prev, [symbol]: null })); // Clear state
+
+          const recoveryBot: SignalBot = {
+            id: `auto-arena-recovery-${symbol}-${Date.now()}`,
+            name: recoveryName,
+            market: symbol,
+            signalType: recoveryName,
+            status: 'running',
+            profit: 0,
+            trades: [],
+            config: {
+              market: symbol,
+              tradeType: 'over_under',
+              predictionType: recoveryType,
+              lastDigitPrediction: recoveryPrediction,
+              ticks: 1,
+              initialStake: signalBotConfig.initialStake,
+              takeProfit: signalBotConfig.takeProfit,
+              stopLossType: 'consecutive_losses',
+              stopLossConsecutive: signalBotConfig.stopLossConsecutive,
+              useMartingale: signalBotConfig.useMartingale,
+              martingaleFactor: signalBotConfig.martingaleFactor,
+              maxTrades: signalBotConfig.maxTrades,
+              useBulkTrading: false,
+              bulkTradeCount: 1,
+              useEntryPoint: false,
+              entryPointType: 'single',
+              entryRangeStart: 0,
+              entryRangeEnd: 9,
+            }
+          };
+          startSignalBot(recoveryBot, false);
+          return; // Recovery takes precedence
+        }
+      }
+
+      // --- 2. NEW ENTRY CHECK (Only if Auto Trade is ON) ---
+      if (!signalBotConfig.autoTrade) return;
+
+      // GLOBAL SERIAL EXECUTION CHECK
+      const isAnyAutoBotRunning = signalBotsRef.current.some(b =>
+        b.status === 'running' && (b.id.startsWith('auto-') || b.id.startsWith('auto-arena-'))
+      );
+      if (isAnyAutoBotRunning) return;
+
+      let shouldTrade = false;
+      let predictionType: 'over' | 'under' = 'over';
+      let prediction = 0;
+      let signalName = '';
+
+      // STRATEGY 1: STRONG OVER 3 + ENTRY POINT
+      if (data.strong_signal && data.strong_signal_type.includes('Over 3')) {
+        if (data.entry_points_over3 && data.entry_points_over3.includes(lastDigit)) {
+          shouldTrade = true;
+          predictionType = 'over';
+          prediction = 3;
+          signalName = 'Strong Over 3 (Auto)';
+        }
+      }
+
+      // STRATEGY 2: STRONG UNDER 6 + ENTRY POINT
+      if (data.strong_signal && data.strong_signal_type.includes('Under 6')) {
+        if (data.entry_points_under6 && data.entry_points_under6.includes(lastDigit)) {
+          shouldTrade = true;
+          predictionType = 'under';
+          prediction = 6;
+          signalName = 'Strong Under 6 (Auto)';
+        }
+      }
+
+      if (shouldTrade) {
+        console.log(`🤖 Auto-Trade Triggered: ${symbol} - ${signalName} @ Digit ${lastDigit}`);
+
+        const newBot: SignalBot = {
+          id: `auto-arena-${symbol}-${Date.now()}`,
+          name: signalName,
+          market: symbol,
+          signalType: signalName,
+          status: 'running',
+          profit: 0,
+          trades: [],
+          config: {
+            market: symbol,
+            tradeType: 'over_under',
+            predictionType: predictionType,
+            lastDigitPrediction: prediction,
+            ticks: 1, // Default to 1 tick
+            initialStake: signalBotConfig.initialStake,
+            takeProfit: signalBotConfig.takeProfit,
+            stopLossType: 'consecutive_losses',
+            stopLossConsecutive: signalBotConfig.stopLossConsecutive,
+            useMartingale: signalBotConfig.useMartingale,
+            martingaleFactor: signalBotConfig.martingaleFactor,
+            maxTrades: signalBotConfig.maxTrades,
+            useBulkTrading: false,
+            useEntryPoint: false,
+          }
+        };
+
+        startSignalBot(newBot, false);
+      }
+    });
+
+  }, [signalBotConfig.autoTrade, analysisData, startSignalBot, arenaRecoveryState, setArenaRecoveryState]);
+
   const stopSignalBot = useCallback((id: string) => {
     setSignalBots(prev => prev.map(bot => bot.id === id ? { ...bot, status: 'stopped' } : bot));
     toast({ title: 'Signal Bot Stopped', description: `The bot with ID ${id} has been manually stopped.` })
@@ -663,6 +776,31 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
       title: 'Signal Bots Reset',
       description: 'All signal bots have been stopped and cleared.',
     });
+  }, [toast]);
+
+  const resetAutoBots = useCallback(() => {
+    const runningAuto = signalBotsRef.current.some(b => b.id.startsWith('auto-') && b.status === 'running');
+    if (runningAuto) {
+      toast({
+        variant: "destructive",
+        title: "Cannot Reset",
+        description: "Please stop all Auto Bots before resetting history."
+      });
+      return;
+    }
+    setSignalBots(prev => prev.filter(b => !b.id.startsWith('auto-')));
+    signalBotsRef.current = signalBotsRef.current.filter(b => !b.id.startsWith('auto-'));
+    toast({ title: "Auto Bot History Cleared", description: "All auto-bot records have been removed." });
+  }, [toast]);
+
+  const stopAllAutoBots = useCallback(() => {
+    setSignalBots(prev => prev.map(b => {
+      if (b.id.startsWith('auto-') && b.status === 'running') {
+        return { ...b, status: 'stopped' };
+      }
+      return b;
+    }));
+    toast({ title: "Auto Bots Stopped", description: "All active auto-trading bots have been stopped." });
   }, [toast]);
 
 
@@ -830,6 +968,12 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
       signalBotConfig,
       setSignalBotConfig,
       resetSignalBots,
+      resetAutoBots,
+      stopAllAutoBots,
+      arenaRecoveryState,
+      setArenaRecoveryState,
+      controlCenterRecoveryState,
+      setControlCenterRecoveryState,
       activeTab,
       setActiveTab,
       activeBuilderTab,
@@ -841,6 +985,8 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
       lastUpdateTime,
       soundEnabled,
       setSoundEnabled,
+      notificationEnabled,
+      setNotificationEnabled,
       tpSlNotification,
       setTpSlNotification,
     }}>

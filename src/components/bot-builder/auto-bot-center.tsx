@@ -5,7 +5,7 @@ import { useBot } from '@/context/bot-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Play, Pause, Zap, Shield, AlertCircle } from 'lucide-react';
+import { Play, Pause, Zap, Shield, AlertCircle, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
 import { useDerivApi } from '@/context/deriv-api-context';
@@ -13,11 +13,13 @@ import AutoTradePanel from './auto-trade-panel';
 import SignalCard from './signal-card';
 
 export default function AutoBotCenter() {
-    const { autoBotData, startSignalBot, signalBots, analysisData } = useBot();
+    const {
+        autoBotData, startSignalBot, signalBots, analysisData, resetAutoBots,
+        controlCenterRecoveryState, setControlCenterRecoveryState, arenaRecoveryState, stopAllAutoBots
+    } = useBot();
     const { isConnected } = useDerivApi();
     const [isAutoBotEnabled, setIsAutoBotEnabled] = useState(false);
     const [lastTradeTime, setLastTradeTime] = useState<{ [key: string]: number }>({});
-    const [recoveryMode, setRecoveryMode] = useState<{ [key: string]: 'over1' | 'under8' | null }>({});
 
     // Watch signal bots to detect losses and enter recovery mode
     useEffect(() => {
@@ -26,24 +28,40 @@ export default function AutoBotCenter() {
                 const lastTrade = bot.trades[0]; // Most recent trade is at index 0
                 if (!lastTrade.isWin) {
                     const symbol = bot.market;
+                    // Check if already handled? simple check to avoid loops
+                    if (controlCenterRecoveryState[symbol]) return;
+
                     if (bot.signalType === 'Over 1 Strategy') {
-                        setRecoveryMode(prev => ({ ...prev, [symbol]: 'over1' }));
+                        setControlCenterRecoveryState(prev => ({ ...prev, [symbol]: 'over1' }));
                     } else if (bot.signalType === 'Under 8 Strategy') {
-                        setRecoveryMode(prev => ({ ...prev, [symbol]: 'under8' }));
+                        setControlCenterRecoveryState(prev => ({ ...prev, [symbol]: 'under8' }));
                     }
+                    // Capture losses from Signal Arena bots (if running in this context, though they are usually handled by BotContext directly)
+                    // We remove the Arena handlers here because BotContext handles them globally now.
                 }
             }
         });
-    }, [signalBots]);
+    }, [signalBots, controlCenterRecoveryState, setControlCenterRecoveryState]);
 
     useEffect(() => {
-        if (!isAutoBotEnabled || !autoBotData) return;
+        if (!autoBotData) return;
+
+        const runningAutoBots = signalBots.filter(b => b.status === 'running' && b.id.startsWith('auto-'));
+        const isAnyAutoBotRunning = runningAutoBots.length > 0;
+
+        // GLOBAL RECOVERY CHECK: If ANY bot is waiting for recovery, block new entries.
+        const isAnyArenaRecovery = Object.values(arenaRecoveryState).some(v => v !== null);
+        const isAnyControlRecovery = Object.values(controlCenterRecoveryState).some(v => v !== null);
+        const isGlobalRecoveryActive = isAnyArenaRecovery || isAnyControlRecovery;
 
         Object.keys(autoBotData).forEach(symbol => {
+            // SERIAL EXECUTION RULE: If ANY auto-bot is running OR recovering, do not start ANOTHER.
+            if (isAnyAutoBotRunning) return;
+
             const data = autoBotData[symbol];
             const now = Date.now();
 
-            // Limit trade frequency per symbol (e.g., 30s cooldown)
+            // Limit trade frequency per symbol
             if (lastTradeTime[symbol] && now - lastTradeTime[symbol] < 30000) return;
 
             let trigger = false;
@@ -52,33 +70,39 @@ export default function AutoBotCenter() {
             let prediction = 0;
             let direction: 'over' | 'under' = 'over';
 
-            if (data.over1Entry) {
-                trigger = true;
-                signalType = 'Over 1 Strategy';
-                strategy = 'over_under';
-                prediction = 1;
-                direction = 'over';
-            } else if (data.under8Entry) {
-                trigger = true;
-                signalType = 'Under 8 Strategy';
-                strategy = 'over_under';
-                prediction = 8;
-                direction = 'under';
-            } else if (recoveryMode[symbol] === 'under8' && data.recoveryUnder8) {
+            // RECOVERY LOGIC (Priority: Runs even if Global Recovery Block is "Self" - this is the exception)
+            if (controlCenterRecoveryState[symbol] === 'under8' && data.recoveryUnder8) {
                 trigger = true;
                 signalType = 'Recovery Over 4';
                 strategy = 'over_under';
                 prediction = 4;
                 direction = 'over';
-                setRecoveryMode(prev => ({ ...prev, [symbol]: null }));
-            } else if (recoveryMode[symbol] === 'over1' && data.recoveryOver1) {
+                setControlCenterRecoveryState(prev => ({ ...prev, [symbol]: null }));
+            } else if (controlCenterRecoveryState[symbol] === 'over1' && data.recoveryOver1) {
                 trigger = true;
                 signalType = 'Recovery Under 6';
                 strategy = 'over_under';
                 prediction = 6;
                 direction = 'under';
-                setRecoveryMode(prev => ({ ...prev, [symbol]: null }));
+                setControlCenterRecoveryState(prev => ({ ...prev, [symbol]: null }));
             }
+            // ENTRY LOGIC (Blocked if ANY recovery is active globally)
+            else if (isAutoBotEnabled && !isGlobalRecoveryActive) {
+                if (data.over1Entry) {
+                    trigger = true;
+                    signalType = 'Over 1 Strategy';
+                    strategy = 'over_under';
+                    prediction = 1;
+                    direction = 'over';
+                } else if (data.under8Entry) {
+                    trigger = true;
+                    signalType = 'Under 8 Strategy';
+                    strategy = 'over_under';
+                    prediction = 8;
+                    direction = 'under';
+                }
+            }
+
 
             if (trigger) {
                 // Check if a bot for this market is already running
@@ -119,6 +143,20 @@ export default function AutoBotCenter() {
         });
     }, [autoBotData, isAutoBotEnabled, startSignalBot, signalBots, lastTradeTime]);
 
+    const toggleAutoBot = () => {
+        if (isAutoBotEnabled) {
+            // HARD STOP:
+            stopAllAutoBots();
+            setControlCenterRecoveryState({});
+            setArenaRecoveryState({});
+            setIsAutoBotEnabled(false);
+            setLastTradeTime({});
+            console.log("🛑 Auto Bot HARD STOP triggered. All trades and states cleared.");
+        } else {
+            setIsAutoBotEnabled(true);
+        }
+    };
+
     return (
         <div className="space-y-6">
             <Card className="border-primary/50 bg-primary/5">
@@ -135,7 +173,7 @@ export default function AutoBotCenter() {
                     <Button
                         size="lg"
                         variant={isAutoBotEnabled ? "destructive" : "default"}
-                        onClick={() => setIsAutoBotEnabled(!isAutoBotEnabled)}
+                        onClick={toggleAutoBot}
                         className="font-bold px-8"
                     >
                         {isAutoBotEnabled ? (
@@ -143,6 +181,15 @@ export default function AutoBotCenter() {
                         ) : (
                             <><Play className="mr-2 h-5 w-5" /> Start Auto Bot</>
                         )}
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={resetAutoBots}
+                        className="ml-2 text-muted-foreground hover:text-destructive"
+                        title="Clear Auto Bot History"
+                    >
+                        <Trash2 className="h-5 w-5" />
                     </Button>
                 </CardHeader>
                 <CardContent>
@@ -194,7 +241,7 @@ export default function AutoBotCenter() {
                                         signalBots={signalBots}
                                         onStartBot={startSignalBot}
                                         autoBotData={autoBotData[card.symbol]}
-                                        recoveryMode={recoveryMode[card.symbol]}
+                                        recoveryMode={controlCenterRecoveryState[card.symbol]}
                                     />
                                 ))}
                                 {Object.keys(analysisData).length === 0 && (

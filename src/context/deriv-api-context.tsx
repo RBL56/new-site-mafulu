@@ -168,8 +168,10 @@ export const DerivApiProvider = ({ children }: { children: ReactNode }) => {
             setIsConnected(true);
 
             // Set active session for persistence
-            const session = { activeLoginid: authorizedAccount.loginid, accounts: Array.from(accountsRef.current.values()) };
-            localStorage.setItem('deriv_session', encode(session));
+            try {
+              const session = { activeLoginid: authorizedAccount.loginid, accounts: Array.from(accountsRef.current.values()) };
+              localStorage.setItem('deriv_session', encode(session));
+            } catch (e) { console.warn("Failed to save session:", e); }
 
             socket.send(JSON.stringify({ balance: 1, subscribe: 1 }));
             socket.send(JSON.stringify({ proposal_open_contract: 1, subscribe: 1 }));

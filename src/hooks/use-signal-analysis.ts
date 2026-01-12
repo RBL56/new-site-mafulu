@@ -158,6 +158,8 @@ const analyzeDigits = (digits: number[], symbol: string, name: string) => {
         strong_signal: strongSignalType !== '',
         strong_signal_type: strongSignalType,
         reasons,
+        lastDigit: digits[digits.length - 1],
+        last5Digits: digits.slice(-5),
     };
 };
 
@@ -220,6 +222,13 @@ const analyzeAutoBotStrategy = (digits: number[], symbol: string, name: string) 
     // Recovery on over 1 -> trade under 6 when last 5 >= 6
     const recoveryOver1 = last5.every(d => d >= 6);
 
+    // NEW PRECISE RECOVERY PATTERNS (User Requested)
+    // "5 consecutive digit equal or less than 4" (0-4) -> For Over 3 Recovery
+    const isLast5Low = last5.every(d => d <= 4);
+
+    // "5 consecutive digit equal or greater than 5" (5-9) -> For Under 6 Recovery
+    const isLast5High = last5.every(d => d >= 5);
+
     return {
         symbol,
         name,
@@ -229,13 +238,16 @@ const analyzeAutoBotStrategy = (digits: number[], symbol: string, name: string) 
         under8Entry,
         recoveryUnder8,
         recoveryOver1,
+        // New patterns
+        isLast5Low,
+        isLast5High,
         lastDigit: digits[digits.length - 1],
         percentages,
         ticks_analyzed: total
     };
 };
 
-export const useSignalAnalysis = () => {
+export const useSignalAnalysis = (soundEnabled: boolean = true, notificationEnabled: boolean = false) => {
     const { api, isConnected, subscribeToMessages, marketConfig } = useDerivApi();
     const [analysisData, setAnalysisData] = useState<{ [key: string]: any }>({});
     const [autoBotData, setAutoBotData] = useState<{ [key: string]: any }>({});
@@ -273,9 +285,18 @@ export const useSignalAnalysis = () => {
                     const previousResult = analysisDataRef.current[symbol];
                     if (result.strong_signal && (!previousResult || !previousResult.strong_signal)) {
                         if (!strongSignalNotified.current.has(symbol)) {
-                            playSound(`${result.name}, ${result.strong_signal_type}`);
+                            // Only play sound if enabled
+                            if (soundEnabled) {
+                                playSound(`${result.name}, ${result.strong_signal_type}`);
+                            }
+
                             strongSignalNotified.current.add(symbol);
-                            setSignalAlert(result);
+
+                            // Only show alert/popup if enabled
+                            if (notificationEnabled) {
+                                setSignalAlert(result);
+                            }
+
                             hasNewStrongSignal = true;
                         }
                     } else if (!result.strong_signal && previousResult && previousResult.strong_signal) {

@@ -10,7 +10,7 @@ interface SignalCardProps {
     signalBots: any[];
     onStartBot: (signal: any, manual: boolean) => void;
     autoBotData?: any;
-    recoveryMode?: 'over1' | 'under8' | null;
+    recoveryMode?: 'over1' | 'under8' | 'over3_loss' | 'under6_loss' | null;
 }
 
 const SignalCard: React.FC<SignalCardProps> = ({

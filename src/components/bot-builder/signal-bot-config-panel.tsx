@@ -9,7 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Bot } from 'lucide-react';
 
 const SignalBotConfigPanel = () => {
-    const { signalBotConfig, setSignalBotConfig } = useBot();
+    const { signalBotConfig, setSignalBotConfig, stopAllAutoBots } = useBot();
 
     const handleInputChange = (field: keyof typeof signalBotConfig, value: string | number) => {
         setSignalBotConfig(prev => ({ ...prev, [field]: Number(value) }));
@@ -17,6 +17,9 @@ const SignalBotConfigPanel = () => {
 
     const handleSwitchChange = (field: keyof typeof signalBotConfig, checked: boolean) => {
         setSignalBotConfig(prev => ({ ...prev, [field]: checked }));
+        if (field === 'autoTrade' && !checked) {
+            stopAllAutoBots();
+        }
     };
 
     return (
@@ -59,17 +62,7 @@ const SignalBotConfigPanel = () => {
                             className="bg-background"
                         />
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="signal-max-trades">Max Trades</Label>
-                        <Input
-                            id="signal-max-trades"
-                            type="number"
-                            placeholder="3"
-                            value={signalBotConfig.maxTrades || ''}
-                            onChange={(e) => handleInputChange('maxTrades', e.target.value)}
-                            className="bg-background"
-                        />
-                    </div>
+
                     <div className="flex items-center space-x-2 pt-6">
                         <Switch
                             id="signal-autotrade"

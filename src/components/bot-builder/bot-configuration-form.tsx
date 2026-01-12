@@ -38,7 +38,7 @@ const formSchema = z.object({
 });
 
 export type BotConfigurationValues = z.infer<typeof formSchema>;
-export type SignalBotConfigurationValues = Pick<BotConfigurationValues, 'initialStake' | 'takeProfit' | 'stopLossConsecutive' | 'useMartingale' | 'martingaleFactor' | 'maxTrades'> & { autoTrade: boolean };
+export type SignalBotConfigurationValues = Pick<BotConfigurationValues, 'initialStake' | 'takeProfit' | 'stopLossConsecutive' | 'useMartingale' | 'martingaleFactor'> & { autoTrade: boolean; maxTrades?: number };
 
 
 export default function BotConfigurationForm() {
