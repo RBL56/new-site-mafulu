@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from './ui/button';
-import { ChevronsUpDown, LogOut, Check, RefreshCcw } from 'lucide-react';
+import { ChevronsUpDown, LogOut, Check, RefreshCcw, User, FlaskConical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from './ui/badge';
 import { ScrollArea } from './ui/scroll-area';
@@ -33,23 +33,38 @@ export function AccountSwitcher() {
     <div className="flex items-center gap-2">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="w-full justify-between md:w-[280px] h-14 border-primary/20 hover:border-primary/40 bg-background/50 backdrop-blur-sm">
-            <div className="flex flex-col items-start transition-all">
-              <span className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider">{activeAccount.loginid}</span>
-              <span className="font-bold text-lg tabular-nums">{formatCurrency(activeAccount.balance, activeAccount.currency)}</span>
+          <Button variant="outline" className="w-full justify-between md:w-[280px] h-14 border-primary/20 hover:border-primary/40 bg-background/50 backdrop-blur-sm px-4">
+            <div className="flex flex-col items-start gap-0.5 flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "uppercase font-bold border px-1.5 py-0 text-[9px] h-4 flex items-center leading-none",
+                    activeAccount.is_virtual ? 'text-amber-500 border-amber-500/20 bg-amber-500/10' : 'text-blue-500 border-blue-500/20 bg-blue-500/10'
+                  )}
+                >
+                  {activeAccount.is_virtual ? 'Demo' : 'Real'}
+                </Badge>
+                <span className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider truncate">{activeAccount.loginid}</span>
+              </div>
+              <div className="flex items-center gap-2 w-full">
+                <span className="font-extrabold text-lg tabular-nums truncate text-foreground leading-tight">
+                  {formatCurrency(activeAccount.balance, activeAccount.currency)}
+                </span>
+                <div className="flex items-center shrink-0">
+                  {activeAccount.is_virtual ? (
+                    <img src="/demo-icon.jpg" alt="Demo" className="h-4 w-4 rounded-full object-contain" />
+                  ) : (
+                    displayCurrency === 'USD' ? (
+                      <img src="/usd-icon.png" alt="USD" className="h-4 w-4 rounded-full object-contain" />
+                    ) : (
+                      <img src="/kenya-icon.png" alt="KSH" className="h-4 w-4 rounded-full object-contain" />
+                    )
+                  )}
+                </div>
+              </div>
             </div>
-            <div className="flex items-center gap-3">
-              <Badge
-                variant="outline"
-                className={cn(
-                  "capitalize font-bold border-2 px-2 py-0.5 text-[10px]",
-                  activeAccount.is_virtual ? 'text-green-500 border-green-500/20 bg-green-500/10' : 'text-blue-500 border-blue-500/20 bg-blue-500/10'
-                )}
-              >
-                {activeAccount.is_virtual ? 'Demo' : 'Real'}
-              </Badge>
-              <ChevronsUpDown className="h-4 w-4 text-muted-foreground opacity-50" />
-            </div>
+            <ChevronsUpDown className="h-4 w-4 text-muted-foreground/30 shrink-0 ml-2" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-[300px] p-0 overflow-hidden border-primary/20 shadow-2xl" align="end">
@@ -73,12 +88,20 @@ export function AccountSwitcher() {
                     )}
                   >
                     <div className="flex-1 flex justify-between items-center py-1">
-                      <div className="flex flex-col">
-                        <p className="text-xs font-mono font-medium">{account.loginid}</p>
-                        <p className="text-[10px] text-muted-foreground">{account.currency}</p>
+                      <div className="flex flex-col gap-0.5">
+                        <div className="flex items-center gap-1.5 text-foreground">
+                          {displayCurrency === 'USD' ? (
+                            <img src="/usd-icon.png" alt="USD" className="h-3 w-3 rounded-full object-contain" />
+                          ) : (
+                            <img src="/kenya-icon.png" alt="KSH" className="h-3 w-3 rounded-full object-contain" />
+                          )}
+                          <p className="text-[10px] font-mono font-medium text-muted-foreground">{account.loginid}</p>
+                        </div>
+                        <span className="text-xs font-bold tabular-nums text-foreground">
+                          {formatCurrency(account.balance, account.currency)}
+                        </span>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm font-bold tabular-nums text-foreground">{formatCurrency(account.balance, account.currency)}</span>
+                      <div className="flex items-center">
                         {account.loginid === activeAccount.loginid && <Check className="h-4 w-4 text-blue-500" strokeWidth={3} />}
                       </div>
                     </div>
@@ -103,12 +126,17 @@ export function AccountSwitcher() {
                     )}
                   >
                     <div className="flex-1 flex justify-between items-center py-1">
-                      <div className="flex flex-col">
-                        <p className="text-xs font-mono font-medium">{account.loginid}</p>
-                        <p className="text-[10px] text-muted-foreground">{account.currency}</p>
+                      <div className="flex flex-col gap-0.5">
+                        <div className="flex items-center gap-1.5 text-foreground">
+                          <img src="/demo-icon.jpg" alt="Demo" className="h-3 w-3 rounded-full object-contain" />
+                          {displayCurrency === 'KSH' && <img src="/kenya-icon.png" alt="KSH" className="h-3 w-3 rounded-full object-contain" />}
+                          <p className="text-[10px] font-mono font-medium text-muted-foreground">{account.loginid}</p>
+                        </div>
+                        <span className="text-xs font-bold tabular-nums text-foreground">
+                          {formatCurrency(account.balance, account.currency)}
+                        </span>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm font-bold tabular-nums text-foreground">{formatCurrency(account.balance, account.currency)}</span>
+                      <div className="flex items-center">
                         {account.loginid === activeAccount.loginid && <Check className="h-4 w-4 text-green-500" strokeWidth={3} />}
                       </div>
                     </div>

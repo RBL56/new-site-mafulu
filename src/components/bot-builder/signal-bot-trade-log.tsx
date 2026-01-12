@@ -32,6 +32,7 @@ export default function SignalBotTradeLog({ trades }: SignalBotTradeLogProps) {
                             <TableHead>Payout</TableHead>
                             <TableHead>Profit/Loss</TableHead>
                             <TableHead>Result</TableHead>
+                            <TableHead>Trigger</TableHead>
                             <TableHead>Entry</TableHead>
                             <TableHead>Exit</TableHead>
                         </TableRow>
@@ -93,7 +94,11 @@ export default function SignalBotTradeLog({ trades }: SignalBotTradeLogProps) {
                                                         {formatCurrency(trade.payout - trade.stake)}
                                                     </Badge>
                                                 </div>
-                                                <div className="grid grid-cols-2 gap-4 pt-2">
+                                                <div className="grid grid-cols-3 gap-4 pt-2">
+                                                    <div className="flex flex-col items-center border rounded p-2 bg-muted/20">
+                                                        <span className="text-xs text-muted-foreground mb-1">Trigger Digit</span>
+                                                        <span className="text-lg font-bold text-blue-500">{trade.triggerDigit ?? '-'}</span>
+                                                    </div>
                                                     <div className="flex flex-col items-center border rounded p-2 bg-muted/20">
                                                         <span className="text-xs text-muted-foreground mb-1">Entry Digit</span>
                                                         <span className="text-lg font-bold">{trade.entryDigit ?? '-'}</span>
@@ -119,6 +124,11 @@ export default function SignalBotTradeLog({ trades }: SignalBotTradeLogProps) {
                                         className={cn(trade.isWin ? 'bg-green-500' : 'bg-red-500')}>
                                         {trade.isWin ? 'Win' : 'Loss'}
                                     </Badge>
+                                </TableCell>
+                                <TableCell>
+                                    <div className="flex items-center justify-center w-8 h-8 border rounded font-bold bg-blue-500/10 text-blue-500 mx-auto">
+                                        {trade.triggerDigit !== undefined ? trade.triggerDigit : '-'}
+                                    </div>
                                 </TableCell>
                                 <TableCell>
                                     <div className="flex items-center justify-center w-8 h-8 border rounded font-bold bg-muted/30 mx-auto">

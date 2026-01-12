@@ -451,6 +451,7 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
           isWin,
           entryDigit,
           exitDigit,
+          triggerDigit: bot.triggerDigit,
           isVirtual: activeAccount?.is_virtual,
         };
 
@@ -925,6 +926,7 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
           signalType: `${pending.signalType} (Entry: ${currentDigit})`,
           status: 'running',
           profit: 0,
+          triggerDigit: currentDigit,
           trades: [],
           config: {
             market: symbol,

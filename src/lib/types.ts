@@ -19,6 +19,7 @@ export type Trade = {
     entryDigit?: number;
     exitTick?: number;
     exitDigit?: number;
+    triggerDigit?: number;
     isVirtual?: boolean;
 };
 
@@ -32,7 +33,7 @@ export interface SignalBot {
     config: BotConfigurationValues;
     consecutiveLosses?: number;
     consecutiveWins?: number;
+    triggerDigit?: number;
     trades: Trade[];
     parentBotId?: string; // For recovery trades - links to the original bot
 }
-
