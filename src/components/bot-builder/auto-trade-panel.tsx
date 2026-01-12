@@ -24,11 +24,19 @@ export default function AutoTradePanel({ type }: AutoTradePanelProps) {
     const { signalBots } = useBot();
 
     // Filter bots based on their origin (ID prefix)
-    const filteredBots = signalBots.filter(bot => {
-        if (type === 'strategy') return bot.id.startsWith('auto-') && !bot.id.startsWith('auto-arena-');
-        if (type === 'arena') return bot.id.startsWith('auto-arena-');
-        return false;
-    });
+    const filteredBots = signalBots
+        .filter(bot => {
+            if (type === 'strategy') return bot.id.startsWith('auto-') && !bot.id.startsWith('auto-arena-');
+            if (type === 'arena') return bot.id.startsWith('auto-arena-');
+            return false;
+        })
+        .sort((a, b) => {
+            const aIsRecovery = a.id.includes('recovery');
+            const bIsRecovery = b.id.includes('recovery');
+            if (aIsRecovery && !bIsRecovery) return -1;
+            if (!aIsRecovery && bIsRecovery) return 1;
+            return 0;
+        });
 
     const totalProfit = filteredBots.reduce((acc, bot) => acc + bot.profit, 0);
     const totalTrades = filteredBots.reduce((acc, bot) => acc + bot.trades.length, 0);
@@ -77,17 +85,35 @@ export default function AutoTradePanel({ type }: AutoTradePanelProps) {
                             filteredBots.map((bot) => (
                                 <Collapsible key={bot.id} className="group">
                                     <div className={cn(
-                                        "flex items-center justify-between p-3 rounded-md border text-sm transition-colors",
-                                        bot.status === 'running' ? "bg-primary/5 border-primary/20" : "bg-secondary/20 border-border/50"
+                                        "flex items-center justify-between p-3 rounded-md border text-sm transition-all",
+                                        bot.id.includes('recovery')
+                                            ? "bg-orange-500/10 border-orange-500/30 ring-1 ring-orange-500/20"
+                                            : bot.status === 'running'
+                                                ? "bg-primary/5 border-primary/20"
+                                                : "bg-secondary/20 border-border/50"
                                     )}>
                                         <div className="flex flex-col">
                                             <div className="flex items-center gap-2">
-                                                <span className="font-bold">{bot.market}</span>
-                                                <Badge variant="outline" className="text-[10px] py-0 h-4">
-                                                    {bot.status}
+                                                <span className={cn(
+                                                    "font-bold",
+                                                    bot.id.includes('recovery') ? "text-orange-600" : ""
+                                                )}>{bot.market}</span>
+                                                <Badge
+                                                    variant={bot.id.includes('recovery') ? "default" : "outline"}
+                                                    className={cn(
+                                                        "text-[10px] py-0 h-4 px-1.5",
+                                                        bot.id.includes('recovery') ? "bg-orange-600 hover:bg-orange-700 border-none" : ""
+                                                    )}
+                                                >
+                                                    {bot.id.includes('recovery') ? 'RECOVERY' : bot.status}
                                                 </Badge>
                                             </div>
-                                            <span className="text-xs text-muted-foreground">{bot.signalType}</span>
+                                            <span className={cn(
+                                                "text-xs font-semibold",
+                                                bot.id.includes('recovery') ? "text-orange-500/80" : "text-muted-foreground"
+                                            )}>
+                                                {bot.signalType}
+                                            </span>
                                         </div>
 
                                         <div className="flex items-center gap-6">

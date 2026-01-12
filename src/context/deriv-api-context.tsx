@@ -90,8 +90,21 @@ export const DerivApiProvider = ({ children }: { children: ReactNode }) => {
       const loginid = balanceData.loginid;
       const updatedBalance = balanceData.balance;
 
-      if (loginid === activeAccountRef.current?.loginid && updatedBalance !== undefined) {
-        setActiveAccount(prev => prev ? { ...prev, balance: updatedBalance } : null);
+      if (updatedBalance !== undefined) {
+        if (loginid === activeAccountRef.current?.loginid) {
+          setActiveAccount(prev => prev ? { ...prev, balance: updatedBalance } : null);
+        }
+
+        // Update accountList to reflect new balance
+        setAccountList(prev => prev.map(acc =>
+          acc.loginid === loginid ? { ...acc, balance: updatedBalance } : acc
+        ));
+
+        // Update ref for persistence
+        const cachedAcc = accountsRef.current.get(loginid);
+        if (cachedAcc) {
+          accountsRef.current.set(loginid, { ...cachedAcc, balance: updatedBalance });
+        }
       }
     }
 
@@ -153,9 +166,15 @@ export const DerivApiProvider = ({ children }: { children: ReactNode }) => {
                 .filter((acc: any) => !acc.is_disabled)
                 .map((acc: any) => {
                   const loginid = acc.loginid;
-                  const correspondingToken = accountsRef.current.get(loginid)?.token;
+                  const cachedAcc = accountsRef.current.get(loginid);
+                  const correspondingToken = cachedAcc?.token;
+
+                  // Use API balance if available, otherwise fallback to cached balance or 0
+                  const balance = acc.balance ?? (loginid === authorizedAccount.loginid ? authorizedAccount.balance : (cachedAcc?.balance ?? 0));
+
                   return {
                     ...acc,
+                    balance,
                     token: correspondingToken || (loginid === authorizedAccount.loginid ? token : ''),
                   };
                 });

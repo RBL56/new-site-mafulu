@@ -14,6 +14,7 @@ export type Trade = {
     marketId: string;
     stake: number;
     payout: number;
+    profit: number;
     isWin: boolean;
     entryDigit?: number;
     exitTick?: number;
@@ -29,6 +30,7 @@ export interface SignalBot {
     profit: number;
     config: BotConfigurationValues;
     consecutiveLosses?: number;
+    consecutiveWins?: number;
     trades: Trade[];
     parentBotId?: string; // For recovery trades - links to the original bot
 }

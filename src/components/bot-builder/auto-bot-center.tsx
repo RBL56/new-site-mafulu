@@ -64,13 +64,16 @@ export default function AutoBotCenter() {
             // Limit trade frequency per symbol
             if (lastTradeTime[symbol] && now - lastTradeTime[symbol] < 30000) return;
 
+            // 1. SYMBOL RECOVERY CHECK: If THIS symbol is in recovery, block EVERYTHING except the recovery trade.
+            const symbolRecoveryActive = !!controlCenterRecoveryState[symbol];
+
             let trigger = false;
             let signalType = '';
             let strategy = '';
             let prediction = 0;
             let direction: 'over' | 'under' = 'over';
 
-            // RECOVERY LOGIC (Priority: Runs even if Global Recovery Block is "Self" - this is the exception)
+            // 2. RECOVERY LOGIC (Highest Priority)
             if (controlCenterRecoveryState[symbol] === 'under8' && data.recoveryUnder8) {
                 trigger = true;
                 signalType = 'Recovery Over 4';
@@ -86,8 +89,8 @@ export default function AutoBotCenter() {
                 direction = 'under';
                 setControlCenterRecoveryState(prev => ({ ...prev, [symbol]: null }));
             }
-            // ENTRY LOGIC (Blocked if ANY recovery is active globally)
-            else if (isAutoBotEnabled && !isGlobalRecoveryActive) {
+            // 3. ENTRY LOGIC (Blocked if ANY recovery is active globally OR ANY bot is already running)
+            else if (isAutoBotEnabled && !isGlobalRecoveryActive && !isAnyAutoBotRunning && !symbolRecoveryActive) {
                 if (data.over1Entry) {
                     trigger = true;
                     signalType = 'Over 1 Strategy';

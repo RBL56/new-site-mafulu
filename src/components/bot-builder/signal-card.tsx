@@ -42,7 +42,8 @@ const SignalCard: React.FC<SignalCardProps> = ({
         return '';
     };
 
-    const isRunning = signalBots.some(b => b.market === card.symbol && b.status === 'running');
+    const runningBot = signalBots.find(b => b.market === card.symbol && b.status === 'running');
+    const isRunning = !!runningBot;
 
     // Use 1000-tick Auto Bot data if available, otherwise use 500-tick card data
     const activeData = autoBotData || card;
@@ -85,6 +86,11 @@ const SignalCard: React.FC<SignalCardProps> = ({
                     </Badge>
                     {recoveryMode === 'over1' && <Badge variant="destructive" className="text-[10px] px-1 h-5 animate-pulse">REC: O4</Badge>}
                     {recoveryMode === 'under8' && <Badge variant="destructive" className="text-[10px] px-1 h-5 animate-pulse">REC: U6</Badge>}
+                    {runningBot && runningBot.consecutiveWins !== undefined && runningBot.consecutiveWins > 0 && (
+                        <Badge variant="outline" className="text-[10px] px-1 h-5 border-yellow-500/50 text-yellow-500 bg-yellow-400/10">
+                            WINS: {runningBot.consecutiveWins}/3
+                        </Badge>
+                    )}
                 </div>
             )}
 

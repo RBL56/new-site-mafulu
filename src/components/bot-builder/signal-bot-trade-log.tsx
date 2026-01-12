@@ -104,11 +104,11 @@ export default function SignalBotTradeLog({ trades }: SignalBotTradeLogProps) {
                                     </Dialog>
                                 </TableCell>
                                 <TableCell>{formatCurrency(trade.stake)}</TableCell>
-                                <TableCell className={cn(trade.payout > 0 ? 'text-green-500' : 'text-red-500')}>
-                                    {trade.payout > 0 ? formatCurrency(trade.payout) : '-'}
+                                <TableCell className={cn(trade.payout > 0 ? 'text-green-500 font-medium' : 'text-red-500 font-medium')}>
+                                    {trade.payout > 0 ? formatCurrency(trade.payout) : formatCurrency(0)}
                                 </TableCell>
-                                <TableCell className={cn((trade.payout - trade.stake) >= 0 ? 'text-green-500 font-bold' : 'text-red-500 font-bold')}>
-                                    {formatCurrency(trade.payout - trade.stake)}
+                                <TableCell className={cn(trade.profit >= 0 ? 'text-green-500 font-bold' : 'text-red-500 font-bold')}>
+                                    {trade.profit >= 0 ? '+' : ''}{formatCurrency(trade.profit)}
                                 </TableCell>
                                 <TableCell>
                                     <Badge variant={trade.isWin ? 'default' : 'destructive'}

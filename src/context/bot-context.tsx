@@ -301,6 +301,7 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
             marketId: configRef.current?.market || '',
             stake: data.buy.buy_price,
             payout: 0,
+            profit: 0,
             isWin: false,
           };
           setTrades(prev => [newTrade, ...prev]);
@@ -354,7 +355,8 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
           if (tradeIndex !== -1) {
             newTrades[tradeIndex] = {
               ...newTrades[tradeIndex],
-              payout: contract.payout,
+              payout: contract.sell_price || 0,
+              profit: contract.profit || 0,
               isWin,
               entryDigit,
               exitTick,
@@ -418,12 +420,15 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
 
         const newProfit = bot.profit + profit;
         let consecutiveLosses = bot.consecutiveLosses || 0;
+        let consecutiveWins = bot.consecutiveWins || 0;
         let nextStake = bot.config.initialStake;
 
         if (isWin) {
           consecutiveLosses = 0;
+          consecutiveWins++;
         } else {
           consecutiveLosses++;
+          consecutiveWins = 0;
           if (bot.config.useMartingale && bot.config.martingaleFactor) {
             nextStake = contractInfo.stake * bot.config.martingaleFactor;
           }
@@ -434,7 +439,8 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
           description: contract.longcode,
           marketId: contract.underlying,
           stake: contractInfo.stake,
-          payout: contract.payout,
+          payout: contract.sell_price || 0,
+          profit: contract.profit || 0,
           isWin,
           entryDigit,
           exitDigit,
@@ -444,15 +450,23 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
           ...bot,
           profit: newProfit,
           consecutiveLosses,
+          consecutiveWins,
           trades: [newTrade, ...bot.trades]
         };
 
         // Check stop conditions
-        const maxTrades = updatedBot.config.maxTrades;
+        const isAutoEntry = updatedBot.id.startsWith('auto-') && !updatedBot.id.includes('recovery');
         const isAutoArena = updatedBot.id.startsWith('auto-arena-');
 
         if (updatedBot.config.takeProfit && updatedBot.profit >= updatedBot.config.takeProfit) {
           toast({ title: "Take-Profit Hit", description: `Signal Bot for ${updatedBot.name} stopped.` });
+          updatedBot.status = 'stopped';
+        } else if (isAutoEntry && consecutiveWins >= 3 && updatedBot.profit > 0) {
+          toast({
+            title: "Target Achieved",
+            description: `Auto Bot for ${updatedBot.name} stopped after 3 wins and in profit.`,
+            variant: "default"
+          });
           updatedBot.status = 'stopped';
         } else if (updatedBot.config.stopLossType === 'consecutive_losses' && updatedBot.config.stopLossConsecutive && consecutiveLosses >= updatedBot.config.stopLossConsecutive) {
           toast({ title: "Stop-Loss Hit", description: `Signal Bot for ${updatedBot.name} stopped.` });
