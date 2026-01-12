@@ -21,7 +21,7 @@ interface AutoTradePanelProps {
 }
 
 export default function AutoTradePanel({ type }: AutoTradePanelProps) {
-    const { signalBots } = useBot();
+    const { signalBots, formatCurrency } = useBot();
 
     // Filter bots based on their origin (ID prefix)
     const filteredBots = signalBots
@@ -43,13 +43,6 @@ export default function AutoTradePanel({ type }: AutoTradePanelProps) {
     const winRate = totalTrades > 0
         ? (filteredBots.reduce((acc, bot) => acc + bot.trades.filter(t => t.isWin).length, 0) / totalTrades) * 100
         : 0;
-
-    const formatCurrency = (value: number) => {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-        }).format(value);
-    };
 
     return (
         <Card className="border-border/50 bg-background/50 backdrop-blur-sm">
@@ -120,7 +113,7 @@ export default function AutoTradePanel({ type }: AutoTradePanelProps) {
                                             <div className="flex flex-col items-end">
                                                 <span className="text-[10px] text-muted-foreground uppercase">Profit</span>
                                                 <span className={cn("font-mono font-bold", bot.profit >= 0 ? "text-green-500" : "text-red-500")}>
-                                                    {bot.profit > 0 ? "+" : ""}{bot.profit.toFixed(2)}
+                                                    {bot.profit > 0 ? "+" : ""}{formatCurrency(bot.profit)}
                                                 </span>
                                             </div>
                                             <CollapsibleTrigger asChild>
@@ -140,6 +133,7 @@ export default function AutoTradePanel({ type }: AutoTradePanelProps) {
                         )}
                     </div>
                 </ScrollArea>
+
             </CardContent>
         </Card>
     );

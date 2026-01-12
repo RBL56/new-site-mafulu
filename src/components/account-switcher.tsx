@@ -2,6 +2,7 @@
 'use client';
 
 import { useDerivApi } from '@/context/deriv-api-context';
+import { useBot } from '@/context/bot-context';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,25 +19,12 @@ import { ScrollArea } from './ui/scroll-area';
 
 export function AccountSwitcher() {
   const { activeAccount, accountList, switchAccount, disconnect, resetBalance } = useDerivApi();
+  const { displayCurrency, setDisplayCurrency, formatCurrency } = useBot();
 
   if (!activeAccount) {
     return null;
   }
 
-  const formatCurrency = (value: number | undefined, currency: string) => {
-    const safeValue = value || 0;
-    const safeCurrency = currency || 'USD';
-    try {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: safeCurrency,
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      }).format(safeValue);
-    } catch (e) {
-      return `${safeCurrency} ${safeValue.toFixed(2)}`;
-    }
-  }
 
   const realAccounts = accountList.filter(acc => !acc.is_virtual);
   const demoAccounts = accountList.filter(acc => acc.is_virtual);
@@ -137,6 +125,29 @@ export function AccountSwitcher() {
                 <span className="text-xs font-semibold">Reset Demo Balance</span>
               </DropdownMenuItem>
             )}
+            <DropdownMenuSeparator className="mx-2 bg-primary/10" />
+            <div className="px-2 py-1 flex items-center justify-between">
+              <span className="px-2 text-[10px] font-bold text-muted-foreground uppercase">Display Currency</span>
+              <div className="flex bg-muted/50 rounded-lg p-1">
+                <Button
+                  variant={displayCurrency === 'USD' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="h-7 text-[10px] px-3 font-bold"
+                  onClick={(e) => { e.stopPropagation(); setDisplayCurrency('USD'); }}
+                >
+                  USD
+                </Button>
+                <Button
+                  variant={displayCurrency === 'KSH' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="h-7 text-[10px] px-3 font-bold"
+                  onClick={(e) => { e.stopPropagation(); setDisplayCurrency('KSH'); }}
+                >
+                  KSH
+                </Button>
+              </div>
+            </div>
+
             <DropdownMenuItem onSelect={() => disconnect()} className="rounded-lg text-red-500 focus:text-red-500 focus:bg-red-500/10 cursor-pointer py-2.5">
               <LogOut className="mr-3 h-4 w-4" />
               <span className="text-xs font-semibold">Logout Account</span>

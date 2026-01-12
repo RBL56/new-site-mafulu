@@ -7,6 +7,7 @@ import { DerivApiProvider } from '@/context/deriv-api-context';
 import { ThemeProvider } from '@/components/theme-provider';
 import { DigitAnalysisProvider } from '@/context/digit-analysis-context';
 import DraggableDisclaimer from '@/components/draggable-disclaimer';
+import { BotProvider } from '@/context/bot-context';
 
 
 export const metadata: Metadata = {
@@ -58,12 +59,14 @@ export default function RootLayout({
         >
           <DerivApiProvider>
             <DigitAnalysisProvider>
-              <div className="relative flex min-h-screen flex-col">
-                <Header />
-                <main className="flex-1">{children}</main>
-                <DraggableDisclaimer />
-              </div>
-              <Toaster />
+              <BotProvider>
+                <div className="relative flex min-h-screen flex-col">
+                  <Header />
+                  <main className="flex-1">{children}</main>
+                  <DraggableDisclaimer />
+                </div>
+                <Toaster />
+              </BotProvider>
             </DigitAnalysisProvider>
           </DerivApiProvider>
         </ThemeProvider>

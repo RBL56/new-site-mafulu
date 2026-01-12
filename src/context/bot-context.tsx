@@ -40,12 +40,13 @@ interface BotContextType {
   resetSignalBots: () => void;
   resetAutoBots: () => void;
   stopAllAutoBots: () => void;
+  resumeSignalBot: (botId: string, recoveryConfig: Partial<BotConfigurationValues>, signalType: string) => void;
 
   // Recovery States
-  arenaRecoveryState: { [key: string]: 'over3_loss' | 'under6_loss' | null };
-  setArenaRecoveryState: React.Dispatch<React.SetStateAction<{ [key: string]: 'over3_loss' | 'under6_loss' | null }>>;
-  controlCenterRecoveryState: { [key: string]: 'over1' | 'under8' | 'over3_loss' | 'under6_loss' | null };
-  setControlCenterRecoveryState: React.Dispatch<React.SetStateAction<{ [key: string]: 'over1' | 'under8' | 'over3_loss' | 'under6_loss' | null }>>;
+  arenaRecoveryState: { [key: string]: { mode: 'over3_loss' | 'under6_loss', botId: string } | null };
+  setArenaRecoveryState: React.Dispatch<React.SetStateAction<{ [key: string]: { mode: 'over3_loss' | 'under6_loss', botId: string } | null }>>;
+  controlCenterRecoveryState: { [key: string]: { mode: 'over1' | 'under8' | 'over3_loss' | 'under6_loss', botId: string } | null };
+  setControlCenterRecoveryState: React.Dispatch<React.SetStateAction<{ [key: string]: { mode: 'over1' | 'under8' | 'over3_loss' | 'under6_loss', botId: string } | null }>>;
 
   // Tabs
   activeTab: string;
@@ -67,6 +68,9 @@ interface BotContextType {
   setNotificationEnabled: (enabled: boolean) => void;
   tpSlNotification: { type: 'tp' | 'sl', profit: number } | null;
   setTpSlNotification: (notification: { type: 'tp' | 'sl', profit: number } | null) => void;
+  displayCurrency: 'USD' | 'KSH';
+  setDisplayCurrency: (currency: 'USD' | 'KSH') => void;
+  formatCurrency: (value: number | undefined, currency?: string) => string;
 }
 
 const BotContext = createContext<BotContextType | undefined>(undefined);
@@ -105,7 +109,7 @@ const playSound = (type: 'tp' | 'sl', soundEnabled: boolean) => {
 };
 
 export const BotProvider = ({ children }: { children: ReactNode }) => {
-  const { api, subscribeToMessages, isConnected, marketConfig } = useDerivApi();
+  const { api, subscribeToMessages, isConnected, marketConfig, activeAccount } = useDerivApi();
   const { toast } = useToast();
   const { lastDigits, connect: connectDigit, disconnect: disconnectDigit, status: digitStatus } = useDigitAnalysis();
 
@@ -129,8 +133,8 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
     martingaleFactor: 2.1,
     autoTrade: false,
   });
-  const [arenaRecoveryState, setArenaRecoveryState] = useState<{ [key: string]: 'over3_loss' | 'under6_loss' | null }>({});
-  const [controlCenterRecoveryState, setControlCenterRecoveryState] = useState<{ [key: string]: 'over1' | 'under8' | 'over3_loss' | 'under6_loss' | null }>({});
+  const [arenaRecoveryState, setArenaRecoveryState] = useState<{ [key: string]: { mode: 'over3_loss' | 'under6_loss', botId: string } | null }>({});
+  const [controlCenterRecoveryState, setControlCenterRecoveryState] = useState<{ [key: string]: { mode: 'over1' | 'under8' | 'over3_loss' | 'under6_loss', botId: string } | null }>({});
   const signalBotsRef = useRef<SignalBot[]>([]);
 
   // UI State
@@ -142,6 +146,7 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
   const [notificationEnabled, setNotificationEnabled] = useState(false);
   const { analysisData, autoBotData, signalAlert, setSignalAlert, lastUpdateTime } = useSignalAnalysis(soundEnabled, notificationEnabled);
   const [tpSlNotification, setTpSlNotification] = useState<{ type: 'tp' | 'sl', profit: number } | null>(null);
+  const [displayCurrency, setDisplayCurrency] = useState<'USD' | 'KSH'>('USD');
 
   const configRef = useRef<BotConfigurationValues | null>(null);
   const currentStakeRef = useRef<number>(0);
@@ -303,6 +308,7 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
             payout: 0,
             profit: 0,
             isWin: false,
+            isVirtual: activeAccount?.is_virtual
           };
           setTrades(prev => [newTrade, ...prev]);
           setTotalStake(prev => prev + newTrade.stake);
@@ -360,7 +366,8 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
               isWin,
               entryDigit,
               exitTick,
-              exitDigit
+              exitDigit,
+              isVirtual: activeAccount?.is_virtual
             };
           }
           return newTrades;
@@ -444,6 +451,7 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
           isWin,
           entryDigit,
           exitDigit,
+          isVirtual: activeAccount?.is_virtual,
         };
 
         const updatedBot: SignalBot = {
@@ -485,10 +493,10 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
           setSignalBots(prev => prev.map(b => b.id === updatedBot.id ? updatedBot : b));
 
           if (updatedBot.config.predictionType === 'over' && updatedBot.config.lastDigitPrediction === 3) {
-            setArenaRecoveryState(prev => ({ ...prev, [symbol]: 'over3_loss' }));
+            setArenaRecoveryState(prev => ({ ...prev, [symbol]: { mode: 'over3_loss', botId: updatedBot.id } }));
             toast({ title: "Recovery Mode: Over 3 Loss", description: "Waiting for 5 low digits to recover..." });
           } else if (updatedBot.config.predictionType === 'under' && updatedBot.config.lastDigitPrediction === 6) {
-            setArenaRecoveryState(prev => ({ ...prev, [symbol]: 'under6_loss' }));
+            setArenaRecoveryState(prev => ({ ...prev, [symbol]: { mode: 'under6_loss', botId: updatedBot.id } }));
             toast({ title: "Recovery Mode: Under 6 Loss", description: "Waiting for 5 high digits to recover..." });
           }
           return;
@@ -626,6 +634,26 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [purchaseContract, setActiveTab, setActiveBuilderTab, signalBotConfig]);
 
+  const resumeSignalBot = useCallback((botId: string, recoveryConfig: Partial<BotConfigurationValues>, signalType: string) => {
+    setSignalBots(prev => prev.map(bot => {
+      if (bot.id === botId) {
+        const updatedBot = {
+          ...bot,
+          status: 'running' as const,
+          signalType,
+          config: {
+            ...bot.config,
+            ...recoveryConfig
+          }
+        };
+        // Trigger the trade
+        purchaseContract('signal', updatedBot.config, updatedBot.trades[0]?.stake * (updatedBot.config.martingaleFactor || 1), updatedBot.id);
+        return updatedBot;
+      }
+      return bot;
+    }));
+  }, [purchaseContract]);
+
   // =========================================================================================
   // AUTO-TRADE ARENA LOGIC
   // =========================================================================================
@@ -668,39 +696,13 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
         }
 
         if (recoveryTrigger) {
-          console.log(`🚑 Executing Recovery: ${symbol} - ${recoveryName}`);
+          console.log(`🚑 Executing Arena Recovery: ${symbol} - ${recoveryName} for Bot ${mode.botId}`);
           setArenaRecoveryState(prev => ({ ...prev, [symbol]: null })); // Clear state
 
-          const recoveryBot: SignalBot = {
-            id: `auto-arena-recovery-${symbol}-${Date.now()}`,
-            name: recoveryName,
-            market: symbol,
-            signalType: recoveryName,
-            status: 'running',
-            profit: 0,
-            trades: [],
-            config: {
-              market: symbol,
-              tradeType: 'over_under',
-              predictionType: recoveryType,
-              lastDigitPrediction: recoveryPrediction,
-              ticks: 1,
-              initialStake: signalBotConfig.initialStake,
-              takeProfit: signalBotConfig.takeProfit,
-              stopLossType: 'consecutive_losses',
-              stopLossConsecutive: signalBotConfig.stopLossConsecutive,
-              useMartingale: signalBotConfig.useMartingale,
-              martingaleFactor: signalBotConfig.martingaleFactor,
-              maxTrades: signalBotConfig.maxTrades,
-              useBulkTrading: false,
-              bulkTradeCount: 1,
-              useEntryPoint: false,
-              entryPointType: 'single',
-              entryRangeStart: 0,
-              entryRangeEnd: 9,
-            }
-          };
-          startSignalBot(recoveryBot, false);
+          resumeSignalBot(mode.botId, {
+            predictionType: recoveryType,
+            lastDigitPrediction: recoveryPrediction,
+          }, recoveryName);
           return; // Recovery takes precedence
         }
       }
@@ -960,6 +962,29 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
 
   const isBotRunning = (botStatus === 'running' || botStatus === 'waiting') && isRunningRef.current;
 
+  const KSH_RATE = 130;
+
+  const formatCurrency = useCallback((value: number | undefined, currency: string = 'USD') => {
+    let safeValue = value || 0;
+    let safeCurrency = currency;
+
+    if (displayCurrency === 'KSH' && (safeCurrency === 'USD' || safeCurrency === '')) {
+      safeValue = safeValue * KSH_RATE;
+      safeCurrency = 'KES';
+    }
+
+    try {
+      return new Intl.NumberFormat(displayCurrency === 'KSH' ? 'en-KE' : 'en-US', {
+        style: 'currency',
+        currency: safeCurrency,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(safeValue);
+    } catch (e) {
+      return `${safeCurrency} ${safeValue.toFixed(2)}`;
+    }
+  }, [displayCurrency]);
+
   return (
     <BotContext.Provider value={{
       trades,
@@ -984,6 +1009,7 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
       resetSignalBots,
       resetAutoBots,
       stopAllAutoBots,
+      resumeSignalBot,
       arenaRecoveryState,
       setArenaRecoveryState,
       controlCenterRecoveryState,
@@ -1003,6 +1029,9 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
       setNotificationEnabled,
       tpSlNotification,
       setTpSlNotification,
+      displayCurrency: displayCurrency as 'USD' | 'KSH',
+      setDisplayCurrency: setDisplayCurrency as (c: 'USD' | 'KSH') => void,
+      formatCurrency,
     }}>
       {children}
     </BotContext.Provider>

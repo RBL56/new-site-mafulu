@@ -8,15 +8,8 @@ import { Skeleton } from '../ui/skeleton';
 import { Button } from '../ui/button';
 
 export default function BotStatus() {
-  const { totalProfit, totalStake, totalRuns, totalWins, totalLosses, isBotRunning, botStatus, soundEnabled, setSoundEnabled } = useBot();
+  const { totalProfit, totalStake, totalRuns, totalWins, totalLosses, isBotRunning, botStatus, soundEnabled, setSoundEnabled, formatCurrency } = useBot();
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      signDisplay: 'always',
-    }).format(value);
-  };
 
   const getProfitColor = (profit: number) => {
     if (profit > 0) return 'text-green-500';

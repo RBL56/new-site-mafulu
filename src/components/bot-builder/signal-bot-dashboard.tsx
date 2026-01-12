@@ -23,21 +23,13 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/colla
 import SignalBotTradeLog from './signal-bot-trade-log';
 
 export default function SignalBotDashboard() {
-    const { signalBots: allSignalBots, stopSignalBot, resetSignalBots } = useBot();
+    const { signalBots: allSignalBots, stopSignalBot, resetSignalBots, formatCurrency } = useBot();
 
     // Manual bots (don't start with auto-)
     const manualBots = allSignalBots.filter(bot => !bot.id.startsWith('auto-'));
 
     // Arena Auto trades (start with auto-arena-)
     const arenaAutoBots = allSignalBots.filter(bot => bot.id.startsWith('auto-arena-'));
-
-    const formatCurrency = (value: number) => {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-            signDisplay: 'auto',
-        }).format(value);
-    };
 
     const getProfitColor = (profit: number) => {
         if (profit > 0) return 'text-green-500';

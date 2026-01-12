@@ -277,9 +277,5 @@ function BotBuilderContent() {
 }
 
 export default function BotBuilderPage() {
-  return (
-    <BotProvider>
-      <BotBuilderContent />
-    </BotProvider>
-  )
+  return <BotBuilderContent />;
 }

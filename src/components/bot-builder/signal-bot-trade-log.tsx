@@ -10,17 +10,15 @@ import { Info } from "lucide-react";
 import { cn } from '@/lib/utils';
 import type { Trade } from '@/lib/types';
 
+import { useBot } from '@/context/bot-context';
+
 interface SignalBotTradeLogProps {
     trades: Trade[];
 }
 
 export default function SignalBotTradeLog({ trades }: SignalBotTradeLogProps) {
-    const formatCurrency = (value: number) => {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-        }).format(value);
-    };
+    const { displayCurrency, setDisplayCurrency, formatCurrency } = useBot();
+
 
     return (
         <div className="w-full mt-4">
@@ -66,6 +64,12 @@ export default function SignalBotTradeLog({ trades }: SignalBotTradeLogProps) {
                                                 <div className="flex items-center justify-between border-b pb-2">
                                                     <span className="font-semibold">Market:</span>
                                                     <span>{trade.marketId}</span>
+                                                </div>
+                                                <div className="flex items-center justify-between border-b pb-2">
+                                                    <span className="font-semibold">Account:</span>
+                                                    <Badge variant={trade.isVirtual ? "secondary" : "default"} className={cn(trade.isVirtual ? "bg-amber-500/10 text-amber-500 border-amber-500/20" : "bg-green-500/10 text-green-500 border-green-500/20")}>
+                                                        {trade.isVirtual ? "Demo Account" : "Real Account"}
+                                                    </Badge>
                                                 </div>
                                                 <div className="flex items-center justify-between border-b pb-2">
                                                     <span className="font-semibold">Description:</span>

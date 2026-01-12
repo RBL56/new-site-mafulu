@@ -19,6 +19,7 @@ export type Trade = {
     entryDigit?: number;
     exitTick?: number;
     exitDigit?: number;
+    isVirtual?: boolean;
 };
 
 export interface SignalBot {

@@ -15,7 +15,8 @@ import SignalCard from './signal-card';
 export default function AutoBotCenter() {
     const {
         autoBotData, startSignalBot, signalBots, analysisData, resetAutoBots,
-        controlCenterRecoveryState, setControlCenterRecoveryState, arenaRecoveryState, setArenaRecoveryState, stopAllAutoBots
+        controlCenterRecoveryState, setControlCenterRecoveryState, arenaRecoveryState, setArenaRecoveryState, stopAllAutoBots,
+        resumeSignalBot
     } = useBot();
     const { isConnected } = useDerivApi();
     const [isAutoBotEnabled, setIsAutoBotEnabled] = useState(false);
@@ -32,9 +33,9 @@ export default function AutoBotCenter() {
                     if (controlCenterRecoveryState[symbol]) return;
 
                     if (bot.signalType === 'Over 1 Strategy') {
-                        setControlCenterRecoveryState(prev => ({ ...prev, [symbol]: 'over1' }));
+                        setControlCenterRecoveryState(prev => ({ ...prev, [symbol]: { mode: 'over1', botId: bot.id } }));
                     } else if (bot.signalType === 'Under 8 Strategy') {
-                        setControlCenterRecoveryState(prev => ({ ...prev, [symbol]: 'under8' }));
+                        setControlCenterRecoveryState(prev => ({ ...prev, [symbol]: { mode: 'under8', botId: bot.id } }));
                     }
                     // Capture losses from Signal Arena bots (if running in this context, though they are usually handled by BotContext directly)
                     // We remove the Arena handlers here because BotContext handles them globally now.
@@ -73,21 +74,24 @@ export default function AutoBotCenter() {
             let prediction = 0;
             let direction: 'over' | 'under' = 'over';
 
+            const recoveryInfo = controlCenterRecoveryState[symbol];
             // 2. RECOVERY LOGIC (Highest Priority)
-            if (controlCenterRecoveryState[symbol] === 'under8' && data.recoveryUnder8) {
-                trigger = true;
-                signalType = 'Recovery Over 4';
-                strategy = 'over_under';
-                prediction = 4;
-                direction = 'over';
+            if (recoveryInfo?.mode === 'under8' && data.recoveryUnder8) {
+                console.log(`🚑 Control Center Recovery: Under 8 Loss -> Resuming ${recoveryInfo.botId} with Over 4`);
+                resumeSignalBot(recoveryInfo.botId, {
+                    predictionType: 'over',
+                    lastDigitPrediction: 4
+                }, 'Recovery Over 4');
                 setControlCenterRecoveryState(prev => ({ ...prev, [symbol]: null }));
-            } else if (controlCenterRecoveryState[symbol] === 'over1' && data.recoveryOver1) {
-                trigger = true;
-                signalType = 'Recovery Under 6';
-                strategy = 'over_under';
-                prediction = 6;
-                direction = 'under';
+                return; // Purchase handled by resumeSignalBot
+            } else if (recoveryInfo?.mode === 'over1' && data.recoveryOver1) {
+                console.log(`🚑 Control Center Recovery: Over 1 Loss -> Resuming ${recoveryInfo.botId} with Under 6`);
+                resumeSignalBot(recoveryInfo.botId, {
+                    predictionType: 'under',
+                    lastDigitPrediction: 6
+                }, 'Recovery Under 6');
                 setControlCenterRecoveryState(prev => ({ ...prev, [symbol]: null }));
+                return; // Purchase handled by resumeSignalBot
             }
             // 3. ENTRY LOGIC (Blocked if ANY recovery is active globally OR ANY bot is already running)
             else if (isAutoBotEnabled && !isGlobalRecoveryActive && !isAnyAutoBotRunning && !symbolRecoveryActive) {
