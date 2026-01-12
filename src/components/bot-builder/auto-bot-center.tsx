@@ -15,7 +15,7 @@ import SignalCard from './signal-card';
 export default function AutoBotCenter() {
     const {
         autoBotData, startSignalBot, signalBots, analysisData, resetAutoBots,
-        controlCenterRecoveryState, setControlCenterRecoveryState, arenaRecoveryState, stopAllAutoBots
+        controlCenterRecoveryState, setControlCenterRecoveryState, arenaRecoveryState, setArenaRecoveryState, stopAllAutoBots
     } = useBot();
     const { isConnected } = useDerivApi();
     const [isAutoBotEnabled, setIsAutoBotEnabled] = useState(false);
