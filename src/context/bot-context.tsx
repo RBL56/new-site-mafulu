@@ -753,6 +753,7 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
           status: 'running',
           profit: 0,
           trades: [],
+          triggerDigit: lastDigit,
           config: {
             market: symbol,
             tradeType: 'over_under',

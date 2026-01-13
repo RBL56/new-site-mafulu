@@ -124,6 +124,7 @@ export default function AutoBotCenter() {
                         status: 'running',
                         profit: 0,
                         trades: [],
+                        triggerDigit: data.lastDigit,
                         config: {
                             market: symbol,
                             tradeType: 'over_under',

@@ -102,10 +102,15 @@ export default function AutoTradePanel({ type }: AutoTradePanelProps) {
                                                 </Badge>
                                             </div>
                                             <span className={cn(
-                                                "text-xs font-semibold",
+                                                "text-xs font-semibold flex items-center gap-2",
                                                 bot.id.includes('recovery') ? "text-orange-500/80" : "text-muted-foreground"
                                             )}>
                                                 {bot.signalType}
+                                                {bot.triggerDigit !== undefined && (
+                                                    <span className="px-1.5 py-0.5 rounded bg-primary/10 text-[10px] text-primary border border-primary/20 font-bold">
+                                                        Entry: {bot.triggerDigit}
+                                                    </span>
+                                                )}
                                             </span>
                                         </div>
 
